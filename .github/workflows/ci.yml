@@ -78,10 +78,16 @@ jobs:
         with:
           version: 12
 
+      # ⚠️ 刻意**不加** `cache: pnpm`。
+      #    setup-node 的缓存靠 post 步骤执行 `pnpm store path` 定位 store 目录，
+      #    而 `pnpm store path` **不读项目级 `.npmrc`**，返回的是盘根默认目录
+      #    （runner 上是 `C:\.pnpm-store`）；我们下面又用 `--store-dir` 把包装进了
+      #    runner 临时目录 —— 两者对不上，post 步骤会以
+      #    「Path Validation Error: 路径不存在」失败，**把整个 job 判红**
+      #    （首次推送实测：前端 job 全步骤绿，只有这个 post 步骤红）。
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       # ⚠️ 仓库里的 `.npmrc` 把 store-dir 指到了开发机的 `D:/workbuddy-ai_Work/.pnpm-store`
       #    （那是本机「杀软 + 并发写盘」问题的绕法）。runner 上没有那个盘，
@@ -118,10 +124,16 @@ jobs:
         with:
           version: 12
 
+      # ⚠️ 刻意**不加** `cache: pnpm`。
+      #    setup-node 的缓存靠 post 步骤执行 `pnpm store path` 定位 store 目录，
+      #    而 `pnpm store path` **不读项目级 `.npmrc`**，返回的是盘根默认目录
+      #    （runner 上是 `C:\.pnpm-store`）；我们下面又用 `--store-dir` 把包装进了
+      #    runner 临时目录 —— 两者对不上，post 步骤会以
+      #    「Path Validation Error: 路径不存在」失败，**把整个 job 判红**
+      #    （首次推送实测：前端 job 全步骤绿，只有这个 post 步骤红）。
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - run: pnpm install --frozen-lockfile --store-dir "${{ runner.temp }}/pnpm-store"
 

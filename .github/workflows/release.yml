@@ -93,10 +93,14 @@ jobs:
         with:
           version: 12
 
+      # ⚠️ 刻意**不加** `cache: pnpm`：setup-node 的缓存 post 步骤靠
+      #    `pnpm store path` 找 store，而它**不读项目级 `.npmrc`**，返回的是
+      #    盘根默认目录；我们又用 `--store-dir` 把包装进了 runner 临时目录 ——
+      #    两者对不上，post 步骤会因「路径不存在」失败并把 job 判红
+      #    （首次发布实测如此，安装包其实已经发成功了）。
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - name: 安装依赖
         run: pnpm install --frozen-lockfile --store-dir "${{ runner.temp }}/pnpm-store"
@@ -106,12 +110,58 @@ jobs:
       - name: 构建安装包
         run: pnpm tauri build
 
+      # 🔴 必须换成 ASCII 文件名再上传
+      #
+      # Tauri 产出的原始名是 `AI全能计算器_1.0.11_x64-setup.exe`（本地构建正常）。
+      # 但 GitHub 的发布资产接口会把文件名里的非 ASCII 字符转义掉 ——
+      # 首次发布实测：`AI全能计算器_1.0.11_x64-setup.exe` 传上去变成了
+      # `AI._1.0.11_x64-setup.exe`（中文整段被吃成一个点），下载页上很难看。
+      #
+      # 安装包**内部**的产品名仍是中文（NSIS 显示名、开始菜单、控制面板都不受影响），
+      # 这里只改文件名。Release 的**标题**也照旧用中文（标题不受影响）。
+      - name: 规整安装包文件名
+        shell: pwsh
+        run: |
+          $ver = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          Write-Host 'Tauri 构建产物：'
+          Get-ChildItem target/release/bundle/nsis/*.exe | ForEach-Object { Write-Host ('  ' + $_.Name) }
+          $src = Get-ChildItem target/release/bundle/nsis/*.exe | Select-Object -First 1
+          $dst = Join-Path $src.DirectoryName "AI-Calculator_${ver}_x64-setup.exe"
+          Copy-Item -LiteralPath $src.FullName -Destination $dst -Force
+          Write-Host ('上传用文件名：' + (Split-Path $dst -Leaf))
+
+      # 重跑、或改了文件名规则之后，旧的 `.exe` 会留在同一个 Release 里 ——
+      # 一个发布挂两个安装包，用户容易下错。只保留本次要传的那一个。
+      - name: 清理该 Release 下的旧安装包
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          $ver = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $keep = "AI-Calculator_${ver}_x64-setup.exe"
+          $json = gh release view $env:TAG --json assets 2>$null
+          if ($LASTEXITCODE -eq 0 -and $json) {
+            $names = ($json | ConvertFrom-Json).assets |
+              Where-Object { $_.name -like '*.exe' } | ForEach-Object { $_.name }
+            foreach ($n in $names) {
+              if ($n -ne $keep) {
+                Write-Host "删除旧安装包：$n"
+                gh release delete-asset $env:TAG $n --yes
+              }
+            }
+          } else {
+            Write-Host '该 Release 尚不存在，无需清理'
+          }
+          exit 0
+
       - name: 发布到 Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
-          name: ${{ inputs.tag || github.ref_name }}
-          files: target/release/bundle/nsis/*.exe
+          # 标题用中文（标题不经过文件名转义），下载页上一眼能认出是哪个应用
+          name: AI全能计算器 ${{ inputs.tag || github.ref_name }}
+          files: target/release/bundle/nsis/AI-Calculator_*.exe
           # 资产没匹配上就直接失败，别发一个没有安装包的 Release
           fail_on_unmatched_files: true
           generate_release_notes: true
