@@ -7,6 +7,9 @@
  * 「重置外观」等区块语义。侧栏折叠是**纯 UI 临时状态**，
  * 放 localStorage 更合适 —— 也避免每次折叠都写一次盘。
  *
+ * **默认折叠、之后记住用户的选择**（见 `readCollapsed()`）——
+ * 也就是说「重置软件」不会把它清回默认（它本来也不在偏好里）。
+ *
  * ## 主题 / 背景**要**放偏好
  *
  * 它们属于"外观"，用户会期望它在「设置 → 外观」里出现，
@@ -40,12 +43,21 @@ export const useUiStore = defineStore('ui', () => {
 
   const navCollapsed = ref(readCollapsed())
 
+  /**
+   * 读侧栏折叠状态。
+   *
+   * 🔴 **默认折叠**：没存过（首次启动）时按折叠算 —— 侧栏是导航，
+   * 日常大部分时间在看内容区，展开是「需要时才做」的动作。
+   * 用户手动切过一次之后就记住他的选择（`localStorage`）。
+   */
   function readCollapsed(): boolean {
     try {
-      return localStorage.getItem(COLLAPSED_KEY) === '1'
+      const saved = localStorage.getItem(COLLAPSED_KEY)
+      // `null` = 从没存过 → 默认折叠；存过就完全听用户的
+      return saved === null ? true : saved === '1'
     } catch {
-      // 隐私模式 / 存储被禁：静默回落，不影响启动
-      return false
+      // 隐私模式 / 存储被禁：读不到偏好，同样按默认折叠，不影响启动
+      return true
     }
   }
 

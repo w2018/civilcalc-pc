@@ -23,7 +23,8 @@
  * ## 其它行为
  *
  * - 长公式横向滚动（容器 `overflow-x:auto`），不折行。
- * - 点击展开全屏（`el-dialog`），大字号看完整公式。
+ * - 双击展开全屏（`el-dialog`）放大预览；弹窗里**先按比例缩字号让整条公式装下**，
+ *   缩到下限仍装不下才横向滚动（见 `fitFormula()` 的说明）。
  * - 方程组（多行且每行带 ① 编号）在左侧加一道大括号。
  * - 文本按 `kind` 上色（见 `tokens.css` 的 `--c-math-*`）。
  */
@@ -106,6 +107,66 @@ const fullscreenOpen = ref(false)
 function openFullscreen(): void {
   if (props.fullscreen && !showRaw.value) fullscreenOpen.value = true
 }
+
+/**
+ * 弹窗里公式的缩放比（`1` = 原字号）。
+ *
+ * ## 🔴 为什么是「缩字号 + 横向滚动条」而不是折行
+ *
+ * 折行虽然也能看全，但数学式一折行**项的边界就断了**
+ * （`nTop×LTop×π/4` 可能被切成两行），读起来容易看错 —— 排版组件整体上
+ * 也是「长公式不折行、横向滚动」的口径。
+ *
+ * 所以策略是两步：
+ * 1. 先量「内容宽 ÷ 可用宽」，能靠缩字号一行装下就装下（最干净）；
+ * 2. 缩到 `MIN_FIT_SCALE` 还装不下就**不再缩**，交给横向滚动条。
+ *
+ * ⚠️ 必须在弹窗 `opened` 之后才量：开启动画期间宽度还没稳定。
+ */
+const fitScale = ref(1)
+const fitBoxRef = ref<HTMLElement | null>(null)
+
+/**
+ * 缩放下限。
+ *
+ * `--f-size-2xl` 是 24px、`--f-size-base` 是 14px —— 24 × 0.6 ≈ 14.4px，
+ * 也就是「缩到底也还和正文一样大」。再往下缩，「放大预览」就不如不放大，
+ * 不如留着字号让用户横向拖。
+ */
+const MIN_FIT_SCALE = 0.6
+
+/** 最多量两轮：间距/内边距是固定 px，缩放不是严格线性，第二轮修掉残差 */
+const MAX_FIT_PASSES = 2
+
+function fitFormula(): void {
+  fitScale.value = 1
+  measureAndFit(0)
+}
+
+function measureAndFit(pass: number): void {
+  // 等一帧：让「缩放复位 + 新字号」的布局先落地再量，否则量到的是上一次的宽度
+  requestAnimationFrame(() => {
+    const box = fitBoxRef.value
+    const inner = box?.firstElementChild as HTMLElement | null
+    if (!box || !inner) return
+
+    const avail = box.clientWidth
+    const need = inner.getBoundingClientRect().width
+    if (avail <= 0 || need <= avail) return
+
+    // 留 1% 余量，别贴着边
+    const wanted = fitScale.value * (avail / need) * 0.99
+    if (wanted < MIN_FIT_SCALE) {
+      // 缩到下限仍装不下 → 停在下限，剩下的交给横向滚动条
+      fitScale.value = MIN_FIT_SCALE
+      return
+    }
+    const next = Math.max(MIN_FIT_SCALE, wanted)
+    if (next === fitScale.value) return
+    fitScale.value = next
+    if (pass + 1 < MAX_FIT_PASSES) measureAndFit(pass + 1)
+  })
+}
 </script>
 
 <template>
@@ -133,21 +194,25 @@ function openFullscreen(): void {
       </p>
     </div>
 
-    <!-- 全屏 -->
+    <!-- 全屏（放大预览） -->
     <el-dialog
       v-model="fullscreenOpen"
       title="公式详情"
-      width="min(92vw, 900px)"
+      width="min(94vw, 1200px)"
       append-to-body
       class="math__dialog"
+      @opened="fitFormula"
     >
-      <div class="math__lines math__lines--big">
-        <div v-for="(line, li) in layout!.lines" :key="li" class="math__line">
-          <span v-if="line.symbol" class="math__sym">{{ line.symbol }} =</span>
-          <span class="math__nodes">
-            <MathNodeView v-for="(n, ni) in line.nodes" :key="ni" :node="n" />
-          </span>
-          <span v-if="line.mark" class="math__mark">{{ line.mark }}</span>
+      <!-- ⚠️ 宽度只能在 `opened` 之后量（开启动画期间尺寸未定） -->
+      <div ref="fitBoxRef" class="math__fit" :style="{ '--math-fit': String(fitScale) }">
+        <div class="math__lines math__lines--big">
+          <div v-for="(line, li) in layout!.lines" :key="li" class="math__line">
+            <span v-if="line.symbol" class="math__sym">{{ line.symbol }} =</span>
+            <span class="math__nodes">
+              <MathNodeView v-for="(n, ni) in line.nodes" :key="ni" :node="n" />
+            </span>
+            <span v-if="line.mark" class="math__mark">{{ line.mark }}</span>
+          </div>
         </div>
       </div>
       <p v-if="hasWarnings" class="math__warn">部分段落无法排版，已按原文显示</p>
@@ -253,9 +318,17 @@ function openFullscreen(): void {
   font-size: var(--f-size-xs);
 }
 
-/* 全屏 */
+/* 放大预览 */
+.math__fit {
+  /* 缩到下限（`MIN_FIT_SCALE`）仍装不下时横向滚动 —— 用全局那套 8px 细滚动条 */
+  overflow: auto;
+  /* 方程组等多行内容给个上限，别把弹窗撑出屏幕 */
+  max-height: 60vh;
+}
+
+/* 字号按 `fitFormula()` 量出的 `--math-fit` 缩放；不折行（见脚本里的说明） */
 .math__lines--big {
-  font-size: var(--f-size-2xl);
+  font-size: calc(var(--f-size-2xl) * var(--math-fit, 1));
   line-height: 2;
   padding: var(--sp-3) 0;
 }

@@ -176,7 +176,6 @@ const paths = () =>
         <!-- ③ 真查到了、且确实是最新 -->
         <template v-else>
           <p class="upd__title">已是最新（v{{ update.currentVersion }}）</p>
-          <p class="upd__meta">已连上 GitHub 并比对过，当前就是最新版本。</p>
         </template>
       </div>
 
