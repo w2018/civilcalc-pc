@@ -4,14 +4,15 @@
  *
  * 见 docs/05-项目开发方案.md §2.1.2「关于」与 `docs/07` 的 P5-3。
  *
- * ## 🔴 检查更新的「没更新」是**歧义**的
+ * ## 检查更新必须把「没更新」与「没查成」分开说
  *
- * `update_check` 在网络失败 / 接口异常 / 无 releases 时**一律**返回
- * `hasUpdate: false`（静默兜底，不抛错）。所以前端**无法**区分
- * 「已是最新」与「没连上 GitHub」。
+ * `update_check` 不会抛错（失败不该弹错误框），但会如实回报三档状态：
+ * 没查成（`checkOk = false` + `failReason`）/ 降级查到（`degraded`）/
+ * 真查到了。这里按状态分别呈现 ——
+ * **说「已是最新」而实际是断网或接口限流，用户会以为更新功能坏了。**
  *
- * 这里如实告诉用户，而不是假装知道 —— 说「已是最新」而实际是断网，
- * 用户会以为更新功能坏了。
+ * 实测撞过：GitHub 匿名 API 是 60 次/小时/IP，限流时旧实现只会显示
+ * 「没有可用的更新」。
  *
  * ## 桌面端不自下载
  *
@@ -29,7 +30,7 @@ import { reportApi, systemApi, updateApi } from '@/api'
 import { normalizeError } from '@/api/invoke'
 import AppLogo from '@/components/common/AppLogo.vue'
 import { errorMessage } from '@/types/error'
-import type { UpdateInfo } from '@/api/update'
+import type { UpdateFailReason, UpdateInfo } from '@/api/update'
 import type { AppInfo } from '@/types/system'
 
 const info = ref<AppInfo | null>(null)
@@ -62,6 +63,29 @@ async function checkUpdate(): Promise<void> {
     ElMessage.error(errorMessage(normalizeError(e)))
   } finally {
     checking.value = false
+  }
+}
+
+/**
+ * 失败原因码 → 给用户看的一句话。
+ *
+ * 只说我们**确实知道**的事，不编。`rateLimited` 那条尤其要写清楚
+ * 「稍后重试即可」—— 否则用户会以为是自己网络的问题。
+ */
+function failText(reason: UpdateFailReason | null): string {
+  switch (reason) {
+    case 'offline':
+      return '连不上 GitHub（网络不通或请求超时）。请检查网络后重试。'
+    case 'rateLimited':
+      return 'GitHub 的匿名接口限流了（每个 IP 每小时 60 次）。这是暂时性的，稍后重试即可。'
+    case 'notFound':
+      return 'GitHub 上找不到这个仓库，或者它还没有发布过版本。'
+    case 'httpError':
+      return 'GitHub 接口返回了异常状态，可能是服务临时故障。'
+    case 'parseError':
+      return 'GitHub 返回的内容解析不了，接口可能改版了。'
+    default:
+      return '未知原因。'
   }
 }
 
@@ -120,9 +144,25 @@ const paths = () =>
 
       <!-- 更新结果 -->
       <div v-if="update" class="upd">
-        <template v-if="update.hasUpdate">
-          <p class="upd__title">发现新版本 {{ update.latestVersion }}（当前 {{ update.currentVersion }}）</p>
-          <p v-if="update.assetSize > 0" class="upd__meta">
+        <!-- ① 没查成 —— 绝不能显示成「已是最新」 -->
+        <template v-if="!update.checkOk">
+          <p class="upd__title upd__title--warn">没能查到更新信息</p>
+          <p class="upd__meta">{{ failText(update.failReason) }}</p>
+          <div class="upd__ops">
+            <el-button @click="checkUpdate()">重试</el-button>
+          </div>
+        </template>
+
+        <!-- ② 查到有新版本 -->
+        <template v-else-if="update.hasUpdate">
+          <p class="upd__title">
+            发现新版本 {{ update.latestVersion }}（当前 {{ update.currentVersion }}）
+          </p>
+          <p v-if="update.degraded" class="upd__meta">
+            ⚠️ {{ failText(update.failReason) }}版本号是走**网页兜底**拿到的，
+            没有安装包大小与校验值，下载后请自行核对。
+          </p>
+          <p v-else-if="update.assetSize > 0" class="upd__meta">
             安装包 {{ updateApi.humanSize(update.assetSize) }}
             <template v-if="update.assetDigest">
               · 校验 {{ update.assetDigest.slice(0, 19) }}…
@@ -131,7 +171,7 @@ const paths = () =>
           <pre v-if="update.releaseNotes" class="upd__notes">{{ update.releaseNotes }}</pre>
           <div class="upd__ops">
             <el-button type="primary" :disabled="!update.downloadUrl" @click="openDownload()">
-              打开下载页
+              {{ update.degraded ? '打开发布页' : '打开下载页' }}
             </el-button>
             <span v-if="!update.downloadUrl" class="upd__warn">
               这个 release 没有可识别的安装包，请手动到发布页下载
@@ -139,12 +179,10 @@ const paths = () =>
           </div>
         </template>
 
+        <!-- ③ 真查到了、且确实是最新 -->
         <template v-else>
-          <p class="upd__title">没有可用的更新</p>
-          <p class="upd__meta">
-            ⚠️ 检查更新在**连不上网络时也会显示这个结果**（后端静默兜底，不区分
-            「已是最新」与「没连上」）。若刚断过网，可稍后重试。
-          </p>
+          <p class="upd__title">已是最新（v{{ update.currentVersion }}）</p>
+          <p class="upd__meta">已连上 GitHub 并比对过，当前就是最新版本。</p>
         </template>
       </div>
     </section>
@@ -297,6 +335,11 @@ const paths = () =>
   color: var(--c-text);
   font-size: var(--f-size-sm);
   font-weight: 500;
+}
+
+/* 「没能查到更新信息」—— 是失败，不是「已是最新」，用告警色区分开 */
+.upd__title--warn {
+  color: var(--c-warning);
 }
 
 .upd__meta {

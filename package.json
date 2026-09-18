@@ -1,7 +1,7 @@
 {
   "name": "civilcalc-pc",
   "private": true,
-  "version": "1.0.11",
+  "version": "1.0.12",
   "type": "module",
   "description": "AI全能计算器 · PC 端",
   "scripts": {
