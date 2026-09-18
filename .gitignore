@@ -1,0 +1,57 @@
+# ---- Rust ----
+/target
+**/*.rs.bk
+*.pdb
+
+# ---- Node ----
+node_modules
+dist
+dist-ssr
+*.local
+.pnpm-store
+
+# vite 把 TS 配置打包成临时 .mjs 再加载；进程被强杀时会留在仓库根目录
+vite.config.ts.timestamp-*.mjs
+
+# ---- Tauri ----
+src-tauri/target
+src-tauri/gen/schemas
+
+# ---- 编辑器 ----
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# ---- 系统 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 日志 ----
+*.log
+logs/
+
+# ---- 本地数据（不应入库）----
+*.db
+*.db-wal
+*.db-shm
+backups/
+
+# ---- 内部文档与开发期资料（不入公开仓库）----
+# 对外发布只保留 README.md 一份说明；设计文档、路线图、契约全文等
+# 属于开发过程资料，留在本地即可。
+/docs/
+
+# ---- 临时文件 ----
+# 图标设计过程稿（`gen-icons.py` 生成的正式图标在 src-tauri/icons/）
+assets/_icon-preview.png
+assets/_icon-zoom.png
+
+# ---- 测试与仓库模板（本地保留，不入公开仓库）----
+# 集成测试与契约测试仅用于本地/内部回归；公开仓库只发布产品源码。
+/src-tauri/tests/
+.github/ISSUE_TEMPLATE/
+.github/pull_request_template.md

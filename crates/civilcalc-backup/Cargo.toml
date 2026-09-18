@@ -1,0 +1,30 @@
+[package]
+name = "civilcalc-backup"
+description = "AI全能计算器 PC 端备份体系（从 Android :core/backup 移植）"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# ⚠️ 硬约束（ADR-002）：不得依赖 tauri。
+# ⚠️ ADR-009：tar 与加密均为自研，不引入 `tar` crate（二进制兼容要求）。
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+flate2.workspace = true
+pbkdf2.workspace = true
+aes-gcm.workspace = true
+sha2.workspace = true
+rand.workspace = true
+quick-xml.workspace = true
+# WebDAV 207 响应解析用宽松正则（命名空间前缀不固定，见 webdav_xml 模块文档）
+regex.workspace = true
+# Basic 认证串（手写以便单测，见 webdav_client::basic_auth_value）
+base64.workspace = true
+# 上传体的带进度流（`stream::unfold`）
+futures-util.workspace = true

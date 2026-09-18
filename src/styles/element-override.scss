@@ -1,0 +1,310 @@
+/* =============================================================================
+ * Element Plus 主题覆盖 · 微信扁平风
+ *
+ * 依据 docs/05-项目开发方案.md §2.3.1
+ *
+ * 目标：把 Element 默认的「蓝色 + 阴影 + 4px 圆角 + 四边框输入框」改造为
+ *       「微信绿 + 无阴影 + 10px 圆角 + 底线输入框 + 无全边框表格」。
+ *
+ * ⚠️ 必须显式覆盖这三个变量，否则会残留 Element 原生蓝：
+ *      --el-color-primary: #07C160
+ *      --el-border-radius-base: 10px
+ *      --el-box-shadow: none
+ * ========================================================================== */
+
+:root {
+  /* ---- 主色（微信绿）---- */
+  --el-color-primary: #07c160;
+  --el-color-primary-light-3: #3fd07f;
+  --el-color-primary-light-5: #6fdd9d;
+  --el-color-primary-light-7: #a5ebc2;
+  --el-color-primary-light-8: #c4f1d6;
+  --el-color-primary-light-9: #e8f8ef;
+  --el-color-primary-dark-2: #06ad56;
+
+  /* ---- 圆角 ---- */
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 6px;
+  --el-border-radius-round: 9999px;
+
+  /* ---- 去阴影 ---- */
+  --el-box-shadow: none;
+  --el-box-shadow-light: none;
+  --el-box-shadow-lighter: none;
+  --el-box-shadow-dark: none;
+
+  /* ---- 边框 / 分割线 ---- */
+  --el-border-color: #e5e5e5;
+  --el-border-color-light: #e5e5e5;
+  --el-border-color-lighter: #efefef;
+  --el-border-color-extra-light: #f5f5f5;
+
+  /* ---- 文字 ---- */
+  --el-text-color-primary: #191919;
+  --el-text-color-regular: #4a4a4a;
+  --el-text-color-secondary: #8c8c8c;
+  --el-text-color-placeholder: #b2b2b2;
+  --el-text-color-disabled: #c0c0c0;
+
+  /* ---- 背景 ---- */
+  --el-bg-color: #ffffff;
+  --el-bg-color-page: #f2f2f2;
+  --el-bg-color-overlay: #ffffff;
+
+  /* ---- 字体 ---- */
+  --el-font-family: var(--f-sans);
+  --el-font-size-base: 14px;
+
+  /* ---- 语义色 ---- */
+  --el-color-success: #07c160;
+  --el-color-warning: #fa9d3b;
+  --el-color-danger: #fa5151;
+  --el-color-error: #fa5151;
+  --el-color-info: #8c8c8c;
+}
+
+/* =============================================================================
+ * 暗色主题
+ * ========================================================================== */
+[data-theme='dark'] {
+  --el-bg-color: #1e1e1e;
+  --el-bg-color-page: #111111;
+  --el-bg-color-overlay: #262626;
+
+  --el-border-color: #2e2e2e;
+  --el-border-color-light: #2e2e2e;
+  --el-border-color-lighter: #333333;
+
+  --el-text-color-primary: #ededed;
+  --el-text-color-regular: #c9c9c9;
+  --el-text-color-secondary: #a3aab8;
+  --el-text-color-placeholder: #6b6b6b;
+
+  --el-fill-color-blank: #1e1e1e;
+  --el-fill-color-light: #262626;
+}
+
+/* =============================================================================
+ * 组件级修正
+ * ========================================================================== */
+
+/* ---- 输入框：无四边框，仅底线（微信风表单特征）---- */
+.el-input__wrapper {
+  box-shadow: none !important;
+  border-radius: 0;
+  border-bottom: var(--hairline) solid var(--c-divider);
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+  transition: border-color 0.15s;
+}
+
+.el-input__wrapper:hover {
+  border-bottom-color: var(--c-text-3);
+}
+
+.el-input__wrapper.is-focus {
+  border-bottom-color: var(--c-primary);
+  border-bottom-width: 2px;
+}
+
+.el-input.is-error .el-input__wrapper,
+.el-form-item.is-error .el-input__wrapper {
+  border-bottom-color: var(--c-danger);
+  border-bottom-width: 2px;
+}
+
+/* 数字输入：去掉原生步进箭头（保持干净）*/
+.el-input-number__decrease,
+.el-input-number__increase {
+  display: none;
+}
+
+/* ---- 按钮：大圆角实心绿 ---- */
+.el-button {
+  border-radius: var(--r-btn);
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.el-button--primary {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+  background: var(--c-primary-hover);
+  border-color: var(--c-primary-hover);
+}
+
+/* 次要操作用文字按钮（无底） */
+.el-button.is-text {
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+}
+
+/* 禁用态用底色而非透明度（避免灰底透出）*/
+.el-button.is-disabled,
+.el-button.is-disabled:hover {
+  background: var(--c-surface-2);
+  border-color: var(--c-surface-2);
+  color: var(--c-text-3);
+  opacity: 1;
+}
+
+/* ---- 表格：不用全边框，仅横向分割线 ---- */
+.el-table {
+  --el-table-border-color: var(--c-divider);
+  --el-table-header-bg-color: var(--c-surface-2);
+  --el-table-row-hover-bg-color: var(--c-surface-hover);
+}
+
+/* 去掉竖向边框 */
+.el-table--border .el-table__cell,
+.el-table td.el-table__cell,
+.el-table th.el-table__cell {
+  border-right: none !important;
+}
+
+.el-table th.el-table__cell {
+  color: var(--c-text-3);
+  font-weight: 500;
+  font-size: var(--f-size-sm);
+}
+
+/* 去掉外框 */
+.el-table--border,
+.el-table--group {
+  border: none;
+}
+
+.el-table::before,
+.el-table--border::after {
+  display: none;
+}
+
+/* 无斑马纹（靠分割线区分）*/
+.el-table .el-table__row--striped td.el-table__cell {
+  background: transparent;
+}
+
+/* ---- 卡片：白底 + 圆角 + 无阴影无描边 ---- */
+.el-card {
+  border: none;
+  border-radius: var(--r-card);
+  box-shadow: none;
+}
+
+.el-card__header {
+  border-bottom: var(--hairline) solid var(--c-divider);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+/* ---- 弹层：允许描边替代阴影 ---- */
+.el-popper,
+.el-dropdown__popper,
+.el-select__popper {
+  border: var(--hairline) solid var(--c-divider) !important;
+  border-radius: var(--r-card);
+  box-shadow: none !important;
+}
+
+/* 选中项用主色浅底 */
+.el-select-dropdown__item.is-selected,
+.el-dropdown-menu__item:not(.is-disabled):hover {
+  background: var(--c-primary-light);
+  color: var(--c-primary);
+}
+
+/* ---- Dialog：大圆角；重要流程用底部弹出式 ---- */
+.el-dialog {
+  border-radius: var(--r-dialog);
+  box-shadow: none;
+}
+
+.el-dialog__header {
+  border-bottom: var(--hairline) solid var(--c-divider);
+  margin-right: 0;
+  padding-bottom: var(--sp-3);
+}
+
+.el-dialog__footer {
+  border-top: var(--hairline) solid var(--c-divider);
+  padding-top: var(--sp-3);
+}
+
+/* ---- Drawer（底部弹出式）：仅上方圆角 + 极轻阴影 ---- */
+.el-drawer.rtl,
+.el-drawer.ltr {
+  box-shadow: none;
+}
+
+.el-drawer.ttb,
+.el-drawer.btt {
+  border-radius: var(--r-dialog) var(--r-dialog) 0 0;
+  box-shadow: var(--shadow-dialog);
+}
+
+/* ---- Tabs：微信风下划线指示器 ---- */
+.el-tabs__item {
+  color: var(--c-text-2);
+}
+
+.el-tabs__item.is-active {
+  color: var(--c-primary);
+}
+
+.el-tabs__active-bar {
+  background: var(--c-primary);
+  height: 2px;
+}
+
+.el-tabs__nav-wrap::after {
+  height: var(--hairline);
+  background: var(--c-divider);
+}
+
+/* ---- 进度条：主色 ---- */
+.el-progress-bar__outer {
+  background: var(--c-surface-2);
+  border-radius: var(--r-pill);
+}
+
+/* ---- 标签 / 徽章：胶囊形 ---- */
+.el-tag {
+  border-radius: var(--r-pill);
+  border: none;
+}
+
+/* ---- 消息提示：深色半透明底 + 白字 ---- */
+.el-message {
+  border: none;
+  border-radius: var(--r-btn);
+  box-shadow: none;
+  min-width: auto;
+}
+
+.el-message-box {
+  border-radius: var(--r-dialog);
+  box-shadow: none;
+}
+
+/* ---- 时间线：细连接线 ---- */
+.el-timeline-item__tail {
+  border-left: var(--hairline) solid var(--c-divider);
+}
+
+/* ---- 折叠面板：去掉外框 ---- */
+.el-collapse,
+.el-collapse-item__header,
+.el-collapse-item__wrap {
+  border: none;
+  border-bottom: var(--hairline) solid var(--c-divider);
+}
+
+.el-collapse-item__header {
+  font-size: var(--f-size-base);
+  color: var(--c-text);
+}

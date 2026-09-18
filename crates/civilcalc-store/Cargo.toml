@@ -1,0 +1,24 @@
+[package]
+name = "civilcalc-store"
+description = "AI全能计算器 · PC 端 —— 本地持久化层（SQLite 访问）"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+# ---- 内部 crate ----
+civilcalc-core.workspace = true
+
+# ---- 基础设施 ----
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+# 图片存储：data URL 编解码（SHA-1 去重为自实现，见 src/sha1.rs）
+base64.workspace = true
+uuid.workspace = true
+
+# ⚠️ 本 crate **不得依赖 tauri**（ADR-025）：
+#    它只做数据访问，依赖 tauri 会让 ~35 个单测被迫连带编译整个 WebView 栈。
+#    由 Cargo.toml 天然强制 —— 想加 tauri 依赖时先读 ADR-025。

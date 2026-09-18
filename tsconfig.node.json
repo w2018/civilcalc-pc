@@ -1,0 +1,27 @@
+{
+  // 只用于给编辑器/Vite 提供 vite.config.ts 的类型环境。
+  //
+  // ⚠️ 刻意**不参与** `tsconfig.json` 的 `references`：
+  // TypeScript 5 起，被引用的项目**不得** `noEmit`
+  // （报 TS6310 "Referenced project ... may not disable emit"），
+  // 而 `composite` 又要求可 emit —— 二者互斥。
+  // 官方 Vite 模板的解法是把根 tsconfig 改成 solution style（files: [] + 多个子项目）；
+  // 本项目只需要「给编辑器认路径」，因此直接不引用，保持简单。
+  //
+  // 影响：`pnpm build` 的 `vue-tsc --noEmit` 只检查 `src/**`，不检查 `vite.config.ts`。
+  // Vite 自己会加载它，出错会在启动时暴露。
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["vite.config.ts"]
+}

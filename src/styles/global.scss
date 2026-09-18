@@ -1,0 +1,108 @@
+// 全局基础样式
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+// `html` 用 `--c-bg-base`（永不透明）：自定义背景图时 body 会透明，
+// 若 html 也没底色，WebView 默认白底会在暗色主题下闪一下
+html {
+  background: var(--c-bg-base);
+}
+
+body {
+  font-family: var(--f-sans);
+  font-size: var(--f-size-base);
+  color: var(--c-text);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+// `#app` 提升到背景图之上（背景图是 `body::before`，z-index: 0）
+#app {
+  position: relative;
+  z-index: 1;
+}
+
+// =============================================================================
+// 需求 10：背景图开启时，区块面半透明 + 每个区块一条彩色框线
+//
+// 为什么需要这段全局规则：区块的底色写在各自组件的 scoped 样式里
+// （`background: var(--c-surface)`），一个个去改会漏，也会把「不透明卡片」
+// 这个设计约束搞乱。这里只做**覆盖**，组件代码一行不动。
+//
+// `outline` 而非 `border`：不改盒模型、不会盖掉组件自己的 border
+// （如 ThinkingBox 流式中的主色左线）。`outline-offset: -1px` 画在区块内侧。
+// =============================================================================
+html[data-bg-image='on'] {
+  .panel,
+  .head,
+  .think,
+  .exp,
+  .card,
+  .branch,
+  .nav,
+  .topbar,
+  .modal__card {
+    background: var(--c-surface-block);
+    outline: var(--hairline) solid var(--c-frame);
+    outline-offset: -1px;
+  }
+
+  // 对话气泡用的是「次级面」（用户气泡的绿色由组件自己的规则管，
+  // 那条选择器权重更高，不会被这里盖掉）
+  .msg__body {
+    background: var(--c-surface-2-block);
+    outline: var(--hairline) solid var(--c-frame);
+    outline-offset: -1px;
+  }
+
+  // 次级面（面板里的输入底 / 代码块等）跟着一起半透明，否则会「透出白块」
+  .think__body,
+  .preview,
+  .rf__expr,
+  .detect,
+  .item__tag,
+  .panel__badge {
+    background: var(--c-surface-2-block);
+  }
+}
+
+// 滚动条：细、无箭头（微信风）
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--c-text-3) 40%, transparent);
+  border-radius: var(--r-pill);
+}
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+// 焦点可见（可访问性要求）
+:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
+// 尊重减少动效偏好
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

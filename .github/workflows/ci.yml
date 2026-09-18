@@ -1,0 +1,151 @@
+# =============================================================================
+#  CI
+#
+#  ## 四个 job 的分工
+#
+#  | job | 何时跑 | 干什么 |
+#  |---|---|---|
+#  | `rust` | 每次 push / PR | `cargo test --workspace` + 全量 clippy `-D warnings` |
+#  | `frontend` | 每次 push / PR | `vue-tsc --noEmit` + `vite build` |
+#  | `bundle` | 只 push（含 tag） | `pnpm tauri build` → 上传 NSIS `.exe` |
+#
+#  ## 为什么跑在 windows-latest
+#
+#  目标平台是 Windows。契约测试（`src-tauri/tests/contract.rs`）要读仓库里的
+#  `.ts` 文件，路径分隔符与大小写敏感性在不同系统上表现不同 ——
+#  在 Windows 上跑才能保证与开发机一致。bundle 更是只能在 Windows 上做。
+#
+#  ## 🔴 刻意**不**加 `cargo fmt --check` 作为阻塞项
+#
+#  仓库当前的代码不是 rustfmt-clean 的（本地 `cargo fmt --all -- --check`
+#  会报 500+ 处差异）。加成立即阻塞等于给 CI 挂一个永远红的灯。
+#  这里把它放成 `fmt-drift` 这个**允许失败**的 job：漂移可见，但不拦人。
+#  真要做格式化，应当单开一个提交整仓 `cargo fmt`，而不是混在功能改动里。
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支的旧运行自动取消（省额度，也避免旧结果盖住新结果）
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # 让 CI 上的 cargo 输出更少噪音
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  rust:
+    name: Rust（测试 + clippy）
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 工具链版本由 rust-toolchain.toml 决定（stable + clippy + msvc target）
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          # 与 src-tauri/Cargo.toml 的 target 目录一致
+          workspaces: '. -> target'
+
+      - name: 单元测试
+        run: cargo test --workspace --locked
+
+      - name: clippy（零告警口径）
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+  frontend:
+    name: 前端（类型检查 + 构建）
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 🔴 必须用 pnpm 12：`pnpm-workspace.yaml` 里的 `allowBuilds` 是 pnpm 12
+      #    的新键名（pnpm 10 只有 `onlyBuiltDependencies`），用 10 会继续报
+      #    `ERR_PNPM_IGNORED_BUILDS` 而装不上依赖。
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # ⚠️ 仓库里的 `.npmrc` 把 store-dir 指到了开发机的 `D:/workbuddy-ai_Work/.pnpm-store`
+      #    （那是本机「杀软 + 并发写盘」问题的绕法）。runner 上没有那个盘，
+      #    所以这里**显式覆盖**成 runner 自己的临时目录。
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile --store-dir "${{ runner.temp }}/pnpm-store"
+
+      - name: 类型检查
+        run: pnpm typecheck
+
+      - name: 生产构建
+        run: pnpm build
+
+  bundle:
+    name: 打包（NSIS）
+    # 只在 push 到**分支**时出包，用作「安装包还打得出来」的构建验证：
+    # PR 阶段没必要等十几分钟的 release 编译；
+    # 打 `v*` 标签时由 `release.yml` 出包并发布，这里跳过以免重复编译一遍。
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/'))
+    needs: [rust, frontend]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: '. -> target'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --store-dir "${{ runner.temp }}/pnpm-store"
+
+      # `tauri build` 会先跑 beforeBuildCommand（`pnpm build`），
+      # 再编译 Rust 并调用 bundler 产出 NSIS / MSI。
+      - name: 构建安装包
+        run: pnpm tauri build
+
+      - name: 上传安装包
+        uses: actions/upload-artifact@v4
+        with:
+          name: civilcalc-pc-installer
+          # 只出 NSIS：`tauri.conf.json` 的 `bundle.targets = ["nsis"]`。
+          # MSI 需要 WiX，本地与 CI 上都曾因 `light.exe` 失败，已按需去掉。
+          path: target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+
+  fmt-drift:
+    name: 格式化漂移（不阻塞）
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check

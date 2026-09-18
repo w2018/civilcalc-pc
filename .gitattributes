@@ -1,0 +1,55 @@
+# =============================================================================
+#  换行符策略
+#
+#  仓库内**一律存 LF**，检出时按下面的规则转换。
+#
+#  ## 为什么必须显式声明
+#
+#  Windows 上 `core.autocrlf` 默认为 `true`：不声明时 `.sh` 会被检出成 CRLF，
+#  而 Git Bash 执行带 CRLF 的脚本会直接报 `$'\r': command not found` ——
+#  `scripts/dev-env.sh` / `bump-version.sh` 全部跑不起来。
+#
+#  ## 约定
+#
+#  | 类型 | 仓库内 | 检出为 |
+#  |---|---|---|
+#  | 源码 / 脚本 / 配置 | LF | LF |
+#  | Windows 批处理 | LF | CRLF |
+#  | 二进制 | 原样 | 原样 |
+# =============================================================================
+
+* text=auto
+
+# ---- 必须 LF ----
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.rs    text eol=lf
+*.ts    text eol=lf
+*.vue   text eol=lf
+*.js    text eol=lf
+*.mjs   text eol=lf
+*.json  text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.md    text eol=lf
+*.css   text eol=lf
+*.scss  text eol=lf
+*.html  text eol=lf
+*.py    text eol=lf
+
+# ---- Windows 脚本保持 CRLF ----
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# ---- 二进制：不做任何转换 ----
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.exe   binary
+*.dll   binary
+*.lib   binary
+*.woff  binary
+*.woff2 binary

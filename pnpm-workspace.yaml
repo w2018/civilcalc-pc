@@ -1,0 +1,29 @@
+# =============================================================================
+#  pnpm 设置 —— pnpm 11 起，设置项从 package.json 的 `pnpm` 字段**搬到了这里**
+#
+#  （本机 pnpm 12 会明确警告：`The "pnpm" field in package.json is no longer read`）
+#  本文件由 pnpm 12 自己生成骨架，这里补上取值。
+#
+#  ## allowBuilds：放行 3 个必须跑构建脚本的依赖
+#
+#  pnpm 10 起**默认拦截**依赖的 postinstall（防供应链投毒），
+#  被拦时 `pnpm install` 直接以 `ERR_PNPM_IGNORED_BUILDS` 失败 ——
+#  **CI 第一次跑就会红**。这三个是真实需要的：
+#
+#  | 包 | 为什么必须放行 |
+#  |---|---|
+#  | `esbuild` | postinstall 放置平台二进制。被拦后 vite 构建直接失败 |
+#  | `@parcel/watcher` | 原生文件监听，被拦后回落到 JS 实现（慢但能跑） |
+#  | `vue-demi` | postinstall 决定走 Vue 2 还是 3 的 API 入口 |
+#
+#  ⚠️ 只列这三个，**不要**图省事全放行 —— 那等于把默认防护关掉。
+#
+#  ⚠️ **CI 必须用 pnpm 12**（`.github/workflows/ci.yml` 里已固定）：
+#  `allowBuilds` 是 pnpm 12 的新键名，pnpm 10 不认它，会继续报
+#  `ERR_PNPM_IGNORED_BUILDS`。
+# =============================================================================
+
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  vue-demi: true

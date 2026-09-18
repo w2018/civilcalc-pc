@@ -1,0 +1,3461 @@
+[
+  {
+    "id": "builtin:struct_concrete_flexural",
+    "resultName": "混凝土受弯构件正截面承载力",
+    "resultSymbol": "Mu",
+    "expression": "alpha1 * fc * b * x * (h0 - x / 2)",
+    "altExpressions": [
+      {
+        "label": "中性轴深度 x",
+        "expression": "As * fy / (alpha1 * fc * b)",
+        "condition": "单筋矩形截面"
+      },
+      {
+        "label": "钢筋应力",
+        "expression": "fy",
+        "condition": "适用于受拉钢筋已屈服"
+      }
+    ],
+    "constants": {
+      "alpha1": 1,
+      "fc": 14.3,
+      "fy": 360
+    },
+    "variables": [
+      {
+        "symbol": "b",
+        "desc": "截面宽度 b",
+        "unit": "mm",
+        "min": 100,
+        "max": 3000
+      },
+      {
+        "symbol": "h0",
+        "desc": "截面有效高度 h0",
+        "unit": "mm",
+        "min": 100,
+        "max": 5000
+      },
+      {
+        "symbol": "As",
+        "desc": "受拉钢筋面积 As",
+        "unit": "mm²",
+        "min": 0
+      },
+      {
+        "symbol": "fc",
+        "desc": "混凝土轴心抗压强度设计值 fc",
+        "unit": "MPa",
+        "default": 14.3
+      },
+      {
+        "symbol": "fy",
+        "desc": "钢筋抗拉强度设计值 fy",
+        "unit": "MPa",
+        "default": 360
+      },
+      {
+        "symbol": "alpha1",
+        "desc": "混凝土应力块高度系数 α1",
+        "unit": "",
+        "default": 1
+      }
+    ],
+    "domain": "GB 50010-2010 第 6.2.10 条，单筋矩形截面，受拉钢筋已屈服",
+    "tags": [
+      "结构",
+      "混凝土",
+      "受弯",
+      "正截面"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第6.2.10条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算中性轴深度 x",
+        "expression": "x = As * fy / (alpha1 * fc * b)"
+      },
+      {
+        "symbol": "step_2",
+        "label": "验算 xi = x/h0 <= xi_b",
+        "expression": "xi = x / h0"
+      },
+      {
+        "symbol": "step_3",
+        "label": "计算承载力 Mu",
+        "expression": "Mu = alpha1 * fc * b * x * (h0 - x/2)"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN·m"
+  },
+  {
+    "id": "builtin:struct_shear_capacity",
+    "resultName": "混凝土构件斜截面承载力",
+    "resultSymbol": "V",
+    "expression": "0.7 * ft * b * h0 + 1.25 * Asv * fyv * h0 / sv",
+    "altExpressions": [
+      {
+        "label": "最小剪切承载力",
+        "expression": "0.7 * ft * b * h0",
+        "condition": "无箍筋时"
+      }
+    ],
+    "constants": {
+      "ft": 1.43,
+      "fyv": 300
+    },
+    "variables": [
+      {
+        "symbol": "b",
+        "desc": "截面宽度 b",
+        "unit": "mm",
+        "min": 100
+      },
+      {
+        "symbol": "h0",
+        "desc": "有效高度 h0",
+        "unit": "mm",
+        "min": 100
+      },
+      {
+        "symbol": "ft",
+        "desc": "混凝土抗拉强度设计值 ft",
+        "unit": "MPa",
+        "default": 1.43
+      },
+      {
+        "symbol": "Asv",
+        "desc": "箍筋截面面积 Asv",
+        "unit": "mm²",
+        "default": 0
+      },
+      {
+        "symbol": "fyv",
+        "desc": "箍筋抗拉强度设计值 fyv",
+        "unit": "MPa",
+        "default": 300
+      },
+      {
+        "symbol": "sv",
+        "desc": "箍筋间距 sv",
+        "unit": "mm",
+        "default": 200
+      }
+    ],
+    "domain": "GB 50010-2010 第 6.3.1 条，斜截面承载力",
+    "tags": [
+      "结构",
+      "混凝土",
+      "抗剪",
+      "斜截面"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第6.3.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算混凝土抗剪承载力 Vc",
+        "expression": "Vc = 0.7 * ft * b * h0"
+      },
+      {
+        "symbol": "step_2",
+        "label": "计算箍筋抗剪承载力 Vs",
+        "expression": "Vs = 1.25 * Asv * fyv * h0 / sv"
+      },
+      {
+        "symbol": "step_3",
+        "label": "总承载力 V = Vc + Vs",
+        "expression": "V = Vc + Vs"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:struct_column_capacity",
+    "resultName": "混凝土柱偏心受压承载力",
+    "resultSymbol": "N",
+    "expression": "alpha1 * fc * b * x + As' * fy' - As * fy",
+    "altExpressions": [],
+    "constants": {
+      "alpha1": 1,
+      "fc": 14.3,
+      "fy": 360
+    },
+    "variables": [
+      {
+        "symbol": "b",
+        "desc": "截面宽度 b",
+        "unit": "mm"
+      },
+      {
+        "symbol": "x",
+        "desc": "受压区高度 x",
+        "unit": "mm"
+      },
+      {
+        "symbol": "As",
+        "desc": "受拉钢筋面积 As",
+        "unit": "mm²"
+      },
+      {
+        "symbol": "As'",
+        "desc": "受压钢筋面积 As'",
+        "unit": "mm²"
+      },
+      {
+        "symbol": "fc",
+        "desc": "混凝土抗压强度设计值 fc",
+        "unit": "MPa",
+        "default": 14.3
+      },
+      {
+        "symbol": "fy",
+        "desc": "受拉钢筋强度设计值 fy",
+        "unit": "MPa",
+        "default": 360
+      },
+      {
+        "symbol": "fy'",
+        "desc": "受压钢筋强度设计值 fy'",
+        "unit": "MPa",
+        "default": 360
+      },
+      {
+        "symbol": "alpha1",
+        "desc": "应力块系数 alpha1",
+        "unit": "",
+        "default": 1
+      }
+    ],
+    "domain": "GB 50010-2010 第 7 章，大偏心受压构件",
+    "tags": [
+      "结构",
+      "混凝土",
+      "柱",
+      "偏心受压"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第7.1.2条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:struct_slab_deflection",
+    "resultName": "板挠度验算",
+    "resultSymbol": "delta",
+    "expression": "5 * q * l^4 / (384 * Ec * I)",
+    "altExpressions": [
+      {
+        "label": "简支梁挠度",
+        "expression": "5 * q * l^4 / (384 * Ec * I)",
+        "condition": "均布载荷简支梁"
+      },
+      {
+        "label": "悬臂梁挠度",
+        "expression": "q * l^4 / (8 * Ec * I)",
+        "condition": "均布载荷悬臂梁"
+      }
+    ],
+    "constants": {
+      "Ec": 30000
+    },
+    "variables": [
+      {
+        "symbol": "q",
+        "desc": "均布载荷设计值 q",
+        "unit": "kN/m"
+      },
+      {
+        "symbol": "l",
+        "desc": "计算跨度 l",
+        "unit": "m"
+      },
+      {
+        "symbol": "Ec",
+        "desc": "混凝土弹性模量 Ec",
+        "unit": "MPa",
+        "default": 30000
+      },
+      {
+        "symbol": "I",
+        "desc": "截面惯性矩 I",
+        "unit": "mm4"
+      }
+    ],
+    "domain": "GB 50010-2010 第 4 章，正常使用极限状态挠度验算",
+    "tags": [
+      "结构",
+      "混凝土",
+      "挠度",
+      "板"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第4.1.3条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_2",
+        "label": "代入挠度公式计算 delta",
+        "expression": "delta = 5 * q * l^4 / (384 * Ec * I)"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "mm"
+  },
+  {
+    "id": "builtin:struct_steel_flexural",
+    "resultName": "钢结构梁塑性承载力",
+    "resultSymbol": "Mp",
+    "expression": "fy * Wx",
+    "altExpressions": [
+      {
+        "label": "弹性承载力",
+        "expression": "fy * Wx / gamma_x",
+        "condition": "1/2 类截面"
+      },
+      {
+        "label": "3/4 类截面",
+        "expression": "fy * Weff",
+        "condition": "有效截面模量"
+      }
+    ],
+    "constants": {
+      "fy": 215,
+      "gamma_x": 1
+    },
+    "variables": [
+      {
+        "symbol": "fy",
+        "desc": "钢材屈服强度设计值 fy",
+        "unit": "MPa",
+        "default": 215
+      },
+      {
+        "symbol": "Wx",
+        "desc": "截面对 x 轴塑性模量 Wx",
+        "unit": "mm3"
+      },
+      {
+        "symbol": "Weff",
+        "desc": "有效弹性模量 Weff",
+        "unit": "mm3"
+      },
+      {
+        "symbol": "gamma_x",
+        "desc": "塑性发展系数 gamma_x",
+        "unit": "",
+        "default": 1
+      }
+    ],
+    "domain": "GB 50017-2017 第 5 章，钢结构梁塑性设计",
+    "tags": [
+      "结构",
+      "钢结构",
+      "梁",
+      "塑性承载力"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50017-2017 第5.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN·m"
+  },
+  {
+    "id": "builtin:struct_steel_column",
+    "resultName": "钢结构轴心受压构件稳定承载力",
+    "resultSymbol": "N",
+    "expression": "phi * A * fy",
+    "altExpressions": [
+      {
+        "label": "稳定系数 phi",
+        "expression": "phi = 1 / (2 * lambda_bar) * (1 + alpha * lambda_bar + lambda_bar^2 - sqrt((1 + alpha * lambda_bar + lambda_bar^2)^2 - 4 * lambda_bar^2))",
+        "condition": "按 GB 50017 公式"
+      }
+    ],
+    "constants": {
+      "fy": 215
+    },
+    "variables": [
+      {
+        "symbol": "A",
+        "desc": "构件截面面积 A",
+        "unit": "mm2"
+      },
+      {
+        "symbol": "phi",
+        "desc": "轴心受压构件稳定系数 φ（按长细比与截面分类查 GB 50017 附表）",
+        "unit": ""
+      }
+    ],
+    "domain": "GB 50017-2017 第 7 章，轴心受压构件整体稳定",
+    "tags": [
+      "结构",
+      "钢结构",
+      "柱",
+      "稳定"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50017-2017 第7.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:struct_bolt_shear",
+    "resultName": "普通螺栓抗剪承载力",
+    "resultSymbol": "V",
+    "expression": "n * vf * As",
+    "altExpressions": [
+      {
+        "label": "高强螺栓摩擦面",
+        "expression": "nf * mu * Pf",
+        "condition": "高强大六角螺栓摩擦型"
+      },
+      {
+        "label": "高强螺栓承压型",
+        "expression": "min(n * vf * As, n * 2.3 * fu * d * t)",
+        "condition": "高强螺栓承压型"
+      }
+    ],
+    "constants": {
+      "vf": 110
+    },
+    "variables": [
+      {
+        "symbol": "n",
+        "desc": "受力剪切面数 n",
+        "unit": "",
+        "min": 1,
+        "default": 1
+      },
+      {
+        "symbol": "vf",
+        "desc": "螺栓抗剪强度设计值 vf",
+        "unit": "MPa",
+        "default": 110
+      },
+      {
+        "symbol": "As",
+        "desc": "螺栓杆部有效截面面积 As",
+        "unit": "mm2"
+      },
+      {
+        "symbol": "mu",
+        "desc": "摩擦系数 mu",
+        "unit": ""
+      },
+      {
+        "symbol": "Pf",
+        "desc": "预紧力设计值 Pf",
+        "unit": "kN"
+      },
+      {
+        "symbol": "fu",
+        "desc": "螺栓抗拉强度标准值 fu",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "d",
+        "desc": "螺栓公称直径 d",
+        "unit": "mm"
+      },
+      {
+        "symbol": "t",
+        "desc": "连接板厚度 t",
+        "unit": "mm"
+      }
+    ],
+    "domain": "GB 50017-2017 第 9 章，螺栓连接",
+    "tags": [
+      "结构",
+      "钢结构",
+      "螺栓",
+      "抗剪"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50017-2017 第9.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:struct_weld_strength",
+    "resultName": "对接焊缝承载力",
+    "resultSymbol": "N",
+    "expression": "few * Aeff",
+    "altExpressions": [
+      {
+        "label": "角焊缝",
+        "expression": "0.7 * hf * lf * fwf",
+        "condition": "角焊缝剪切"
+      }
+    ],
+    "constants": {
+      "few": 190,
+      "fwf": 160
+    },
+    "variables": [
+      {
+        "symbol": "few",
+        "desc": "对接焊缝抗拉强度设计值 few",
+        "unit": "MPa",
+        "default": 190
+      },
+      {
+        "symbol": "Aeff",
+        "desc": "焊缝有效截面面积 Aeff",
+        "unit": "mm2"
+      },
+      {
+        "symbol": "hf",
+        "desc": "焊脚尺寸 hf",
+        "unit": "mm"
+      },
+      {
+        "symbol": "lf",
+        "desc": "焊缝有效长度 lf",
+        "unit": "mm"
+      },
+      {
+        "symbol": "fwf",
+        "desc": "角焊缝强度设计值 fwf",
+        "unit": "MPa",
+        "default": 160
+      }
+    ],
+    "domain": "GB 50017-2017 第 9 章，焊缝连接",
+    "tags": [
+      "结构",
+      "钢结构",
+      "焊缝",
+      "对接焊"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50017-2017 第9.4.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:struct_foundation_bearing",
+    "resultName": "浅基础承载力特征值",
+    "resultSymbol": "fa",
+    "expression": "fa = Mb * gamma_b * b + Md * gamma_d * d + Mc * ck",
+    "altExpressions": [
+      {
+        "label": "条形基础",
+        "expression": "fa = Mb * gamma_b * b + Md * gamma_d * d + Mc * ck",
+        "condition": "L/B > 5"
+      },
+      {
+        "label": "方形基础",
+        "expression": "fa = 1.2 * (Mb * gamma_b * b + Md * gamma_d * d + Mc * ck)",
+        "condition": "正方形基础"
+      }
+    ],
+    "constants": {
+      "Mb": 0.5,
+      "Md": 2.5,
+      "Mc": 4,
+      "ck": 20
+    },
+    "variables": [
+      {
+        "symbol": "b",
+        "desc": "基础宽度 b",
+        "unit": "m"
+      },
+      {
+        "symbol": "d",
+        "desc": "基础埋深 d",
+        "unit": "m"
+      },
+      {
+        "symbol": "gamma_b",
+        "desc": "基础底面以上土的加权平均重度 gamma_b",
+        "unit": "kN/m3"
+      },
+      {
+        "symbol": "gamma_d",
+        "desc": "基础底面以上土的加权平均重度 gamma_d",
+        "unit": "kN/m3"
+      },
+      {
+        "symbol": "ck",
+        "desc": "基底下一倍短边宽深度内土的粘聚力标准值 ck",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "Mb",
+        "desc": "承载力系数 Mb",
+        "unit": "",
+        "default": 0.5
+      },
+      {
+        "symbol": "Md",
+        "desc": "承载力系数 Md",
+        "unit": "",
+        "default": 2.5
+      },
+      {
+        "symbol": "Mc",
+        "desc": "承载力系数 Mc",
+        "unit": "",
+        "default": 4
+      }
+    ],
+    "domain": "GB 50007-2011 第 5 章，浅基础承载力",
+    "tags": [
+      "结构",
+      "地基基础",
+      "浅基础",
+      "承载力"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50007-2011 第5.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kPa"
+  },
+  {
+    "id": "builtin:struct_masonry_wall",
+    "resultName": "砌体墙轴心受压承载力",
+    "resultSymbol": "N",
+    "expression": "phi * A * f",
+    "altExpressions": [
+      {
+        "label": "偏心受压",
+        "expression": "phi * A * f / (1 + 2 * e / b)",
+        "condition": "偏心距 e <= b/6"
+      }
+    ],
+    "constants": {
+      "f": 1.2,
+      "phi": 0.8
+    },
+    "variables": [
+      {
+        "symbol": "phi",
+        "desc": "稳定系数 phi",
+        "unit": "",
+        "default": 0.8
+      },
+      {
+        "symbol": "A",
+        "desc": "截面面积 A",
+        "unit": "mm2"
+      },
+      {
+        "symbol": "f",
+        "desc": "砌体抗压强度设计值 f",
+        "unit": "MPa",
+        "default": 1.2
+      },
+      {
+        "symbol": "e",
+        "desc": "偏心距 e",
+        "unit": "mm"
+      },
+      {
+        "symbol": "b",
+        "desc": "墙截面宽度 b",
+        "unit": "mm"
+      }
+    ],
+    "domain": "GB 50003-2011 第 6 章，砌体受压构件",
+    "tags": [
+      "结构",
+      "砌体",
+      "墙",
+      "轴心受压"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50003-2011 第6.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:struct_timber_beam",
+    "resultName": "木结构梁正常截面承载力",
+    "resultSymbol": "M",
+    "expression": "f * W / gamma_m",
+    "altExpressions": [],
+    "constants": {
+      "f": 8.5,
+      "gamma_m": 1.2
+    },
+    "variables": [
+      {
+        "symbol": "f",
+        "desc": "木材抗弯强度设计值 f",
+        "unit": "MPa",
+        "default": 8.5
+      },
+      {
+        "symbol": "W",
+        "desc": "截面模量 W",
+        "unit": "mm3"
+      },
+      {
+        "symbol": "gamma_m",
+        "desc": "木材材料分项系数 gamma_m",
+        "unit": "",
+        "default": 1.2
+      }
+    ],
+    "domain": "GB 50005-2017 第 5 章，木结构梁承载力",
+    "tags": [
+      "结构",
+      "木结构",
+      "梁",
+      "正常截面"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50005-2017 第5.1.2条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN·m"
+  },
+  {
+    "id": "builtin:struct_crack_width",
+    "resultName": "混凝土裂缝宽度验算",
+    "resultSymbol": "wk",
+    "expression": "alpha_cr * psi * sigma_sq * l_eq / Es",
+    "altExpressions": [],
+    "constants": {
+      "alpha_cr": 2.1,
+      "Es": 200000
+    },
+    "variables": [
+      {
+        "symbol": "alpha_cr",
+        "desc": "裂缝间钢筋应变不均匀系数 alpha_cr",
+        "unit": "",
+        "default": 2.1
+      },
+      {
+        "symbol": "psi",
+        "desc": "裂缝间钢筋应变不均匀系数 psi",
+        "unit": ""
+      },
+      {
+        "symbol": "sigma_sq",
+        "desc": "裂缝处钢筋应力 sigma_sq",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "l_eq",
+        "desc": "等效钢筋直径 l_eq",
+        "unit": "mm"
+      },
+      {
+        "symbol": "Es",
+        "desc": "钢筋弹性模量 Es",
+        "unit": "MPa",
+        "default": 200000
+      }
+    ],
+    "domain": "GB 50010-2010 第 9 章，裂缝宽度验算",
+    "tags": [
+      "结构",
+      "混凝土",
+      "裂缝宽度"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第9.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "mm"
+  },
+  {
+    "id": "builtin:struct_prestress_loss",
+    "resultName": "预应力损失计算",
+    "resultSymbol": "sigma_l",
+    "expression": "sigma_l1 + sigma_l2 + sigma_l3 + sigma_l4 + sigma_l5 + sigma_l6",
+    "altExpressions": [
+      {
+        "label": "张拉端锚固损失",
+        "expression": "sigma_l1",
+        "condition": "锚固滑移"
+      },
+      {
+        "label": "摩擦损失",
+        "expression": "sigma_l2 = sigma_con * (k * x + mu * theta)",
+        "condition": "曲线管道"
+      },
+      {
+        "label": "混凝土收缩蠕变",
+        "expression": "sigma_l3",
+        "condition": "时间依赖"
+      },
+      {
+        "label": "钢筋松弛",
+        "expression": "sigma_l4",
+        "condition": "钢筋应力松弛"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "sigma_l1",
+        "desc": "锚固损失 sigma_l1",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "sigma_l2",
+        "desc": "摩擦损失 sigma_l2",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "sigma_l3",
+        "desc": "收缩蠕变损失 sigma_l3",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "sigma_l4",
+        "desc": "钢筋松弛损失 sigma_l4",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "sigma_l5",
+        "desc": "弹性压缩损失 sigma_l5",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "sigma_l6",
+        "desc": "温差损失 sigma_l6",
+        "unit": "MPa"
+      }
+    ],
+    "domain": "GB 50010-2010 第 18 章，预应力损失",
+    "tags": [
+      "结构",
+      "预应力",
+      "损失"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第18.3.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "MPa"
+  },
+  {
+    "id": "builtin:struct_seismic_shear",
+    "resultName": "底部剪力标准值",
+    "resultSymbol": "Vek",
+    "expression": "alpha1 * Geq",
+    "altExpressions": [],
+    "constants": {
+      "alpha1": 0.08
+    },
+    "variables": [
+      {
+        "symbol": "alpha1",
+        "desc": "水平地震影响系数最大值 alpha1",
+        "unit": "",
+        "default": 0.08
+      },
+      {
+        "symbol": "Geq",
+        "desc": "结构等效总重力荷载 Geq",
+        "unit": "kN"
+      }
+    ],
+    "domain": "GB 50011-2010 第 3 章，底部剪力法",
+    "tags": [
+      "结构",
+      "抗震",
+      "底部剪力",
+      "地震"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50011-2010 第5.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:struct_wind_load",
+    "resultName": "风荷载标准值",
+    "resultSymbol": "Wk",
+    "expression": "beta_z * mu_s * mu_z * w0",
+    "altExpressions": [],
+    "constants": {
+      "w0": 0.5
+    },
+    "variables": [
+      {
+        "symbol": "beta_z",
+        "desc": "z 高度处风振系数 beta_z",
+        "unit": ""
+      },
+      {
+        "symbol": "mu_s",
+        "desc": "风载体形系数 mu_s",
+        "unit": ""
+      },
+      {
+        "symbol": "mu_z",
+        "desc": "风压高度变化系数 mu_z",
+        "unit": "",
+        "default": 1
+      },
+      {
+        "symbol": "w0",
+        "desc": "基本风压 w0",
+        "unit": "kN/m2",
+        "default": 0.5
+      }
+    ],
+    "domain": "GB 50009-2012 第 4 章，风荷载",
+    "tags": [
+      "结构",
+      "风荷载",
+      "荷载"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50009-2012 第4.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN/m²"
+  },
+  {
+    "id": "builtin:struct_snow_load",
+    "resultName": "雪荷载标准值",
+    "resultSymbol": "Sk",
+    "expression": "mu_r * s0",
+    "altExpressions": [],
+    "constants": {
+      "s0": 0.35
+    },
+    "variables": [
+      {
+        "symbol": "mu_r",
+        "desc": "屋面积雪分布系数 mu_r",
+        "unit": "",
+        "default": 1
+      },
+      {
+        "symbol": "s0",
+        "desc": "基本雪压 s0",
+        "unit": "kN/m2",
+        "default": 0.35
+      }
+    ],
+    "domain": "GB 50009-2012 第 5 章，雪荷载",
+    "tags": [
+      "结构",
+      "雪荷载",
+      "荷载"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50009-2012 第5.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN/m²"
+  },
+  {
+    "id": "builtin:struct_rebar_anchorage",
+    "resultName": "钢筋锚固长度",
+    "resultSymbol": "la",
+    "expression": "zeta_a * fy * d / (4 * ft)",
+    "altExpressions": [
+      {
+        "label": "受拉钢筋直锚固",
+        "expression": "zeta_a * fy * d / (4 * ft)",
+        "condition": "直锚固"
+      },
+      {
+        "label": "受压钢筋直锚固",
+        "expression": "0.7 * zeta_a * fy * d / (4 * ft)",
+        "condition": "受压直锚固"
+      }
+    ],
+    "constants": {
+      "fy": 360,
+      "ft": 1.43
+    },
+    "variables": [
+      {
+        "symbol": "zeta_a",
+        "desc": "受拉钢筋锚固系数 zeta_a",
+        "unit": "",
+        "default": 1
+      },
+      {
+        "symbol": "fy",
+        "desc": "钢筋抗拉强度设计值 fy",
+        "unit": "MPa",
+        "default": 360
+      },
+      {
+        "symbol": "d",
+        "desc": "钢筋直径 d",
+        "unit": "mm"
+      },
+      {
+        "symbol": "ft",
+        "desc": "混凝土抗拉强度设计值 ft",
+        "unit": "MPa",
+        "default": 1.43
+      }
+    ],
+    "domain": "GB 50010-2010 第 8 章，钢筋锚固",
+    "tags": [
+      "结构",
+      "钢筋",
+      "锚固",
+      "长度"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第8.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "mm"
+  },
+  {
+    "id": "builtin:struct_rebar_splice",
+    "resultName": "钢筋搭接长度",
+    "resultSymbol": "ll",
+    "expression": "zeta_l * la",
+    "altExpressions": [],
+    "constants": {
+      "zeta_l": 1
+    },
+    "variables": [
+      {
+        "symbol": "zeta_l",
+        "desc": "搭接系数 zeta_l",
+        "unit": "",
+        "default": 1
+      },
+      {
+        "symbol": "la",
+        "desc": "锚固长度 la",
+        "unit": "mm"
+      }
+    ],
+    "domain": "GB 50010-2010 第 8 章，钢筋搭接",
+    "tags": [
+      "结构",
+      "钢筋",
+      "搭接",
+      "长度"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第8.3.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "mm"
+  },
+  {
+    "id": "builtin:struct_punching_shear",
+    "resultName": "板柱节点冲切承载力",
+    "resultSymbol": "Vp",
+    "expression": "0.7 * ft * um * h0",
+    "altExpressions": [],
+    "constants": {
+      "ft": 1.43
+    },
+    "variables": [
+      {
+        "symbol": "ft",
+        "desc": "混凝土抗拉强度设计值 ft",
+        "unit": "MPa",
+        "default": 1.43
+      },
+      {
+        "symbol": "um",
+        "desc": "距柱边 h0/2 处冲切临界截面周长 um",
+        "unit": "mm"
+      },
+      {
+        "symbol": "h0",
+        "desc": "板有效厚度 h0",
+        "unit": "mm"
+      }
+    ],
+    "domain": "GB 50010-2010 第 6.3.5 条，板冲切承载力",
+    "tags": [
+      "结构",
+      "板",
+      "冲切",
+      "柱节点"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第6.3.5条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:struct_deflection_limit",
+    "resultName": "挠度限值检查",
+    "resultSymbol": "delta_lim",
+    "expression": "L / k",
+    "altExpressions": [
+      {
+        "label": "梁挠度限值",
+        "expression": "L / 250",
+        "condition": "一般梁"
+      },
+      {
+        "label": "悬臂梁限值",
+        "expression": "L / 100",
+        "condition": "悬臂梁"
+      },
+      {
+        "label": "板挠度限值",
+        "expression": "L / 200",
+        "condition": "板"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "L",
+        "desc": "计算跨度 L",
+        "unit": "m"
+      },
+      {
+        "symbol": "k",
+        "desc": "限值系数 k",
+        "unit": "",
+        "default": 250
+      }
+    ],
+    "domain": "GB 50010-2010 第 4.1.4 条，挠度限值",
+    "tags": [
+      "结构",
+      "挠度",
+      "限值",
+      "验算"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50010-2010 第4.1.4条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "mm"
+  },
+  {
+    "id": "builtin:constr_concrete_mix",
+    "resultName": "混凝土配合强度",
+    "resultSymbol": "fcu0",
+    "expression": "fcu + 1.645 * sigma",
+    "altExpressions": [],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "fcu",
+        "desc": "混凝土立方体抗压强度标准值 fcu",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "sigma",
+        "desc": "强度标准差 sigma",
+        "unit": "MPa"
+      }
+    ],
+    "domain": "JGJ 55-2011 第 4 章，混凝土配合比设计",
+    "tags": [
+      "施工",
+      "混凝土",
+      "配合比",
+      "强度"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 55-2011 第4.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "MPa"
+  },
+  {
+    "id": "builtin:constr_slump_loss",
+    "resultName": "混凝土坍落度损失",
+    "resultSymbol": "dS",
+    "expression": "S0 - St",
+    "altExpressions": [],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "S0",
+        "desc": "初始坍落度 S0",
+        "unit": "mm"
+      },
+      {
+        "symbol": "St",
+        "desc": "时间 t 后坍落度 St",
+        "unit": "mm"
+      }
+    ],
+    "domain": "JGJ 55-2011 第 5 章，混凝土性能",
+    "tags": [
+      "施工",
+      "混凝土",
+      "坍落度",
+      "损失"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 55-2011 第5.1.3条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "mm"
+  },
+  {
+    "id": "builtin:constr_formwork_pressure",
+    "resultName": "模板侧压力",
+    "resultSymbol": "P",
+    "expression": "gamma * h + 0.25 * gamma * v * sqrt(h)",
+    "altExpressions": [],
+    "constants": {
+      "gamma": 24
+    },
+    "variables": [
+      {
+        "symbol": "gamma",
+        "desc": "混凝土单位重 gamma",
+        "unit": "kN/m3",
+        "default": 24
+      },
+      {
+        "symbol": "h",
+        "desc": "浇筑高度 h",
+        "unit": "m"
+      },
+      {
+        "symbol": "v",
+        "desc": "浇筑速度 v",
+        "unit": "m/h"
+      }
+    ],
+    "domain": "JGJ 101-2010 第 4 章，模板侧压力",
+    "tags": [
+      "施工",
+      "模板",
+      "侧压力",
+      "浇筑"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 101-2010 第4.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN/m²"
+  },
+  {
+    "id": "builtin:constr_scaffold_load",
+    "resultName": "脚手架荷载标准值",
+    "resultSymbol": "qk",
+    "expression": "qk1 + qk2 + qk3",
+    "altExpressions": [
+      {
+        "label": "人员荷载",
+        "expression": "1.5",
+        "condition": "作业层人员"
+      },
+      {
+        "label": "材料荷载",
+        "expression": "qk2",
+        "condition": "堆放材料"
+      },
+      {
+        "label": "设备荷载",
+        "expression": "qk3",
+        "condition": "施工设备"
+      }
+    ],
+    "constants": {
+      "qk1": 1.5
+    },
+    "variables": [
+      {
+        "symbol": "qk1",
+        "desc": "人员荷载标准值 qk1",
+        "unit": "kN/m2",
+        "default": 1.5
+      },
+      {
+        "symbol": "qk2",
+        "desc": "材料荷载标准值 qk2",
+        "unit": "kN/m2"
+      },
+      {
+        "symbol": "qk3",
+        "desc": "设备荷载标准值 qk3",
+        "unit": "kN/m2"
+      }
+    ],
+    "domain": "JGJ 130-2011 第 3 章，脚手架荷载",
+    "tags": [
+      "施工",
+      "脚手架",
+      "荷载"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 130-2011 第3.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN/m²"
+  },
+  {
+    "id": "builtin:constr_earthwork_volume",
+    "resultName": "土方开挖体积",
+    "resultSymbol": "V",
+    "expression": "A * L",
+    "altExpressions": [
+      {
+        "label": "方格网法",
+        "expression": "sum(Ai * hi) / 3",
+        "condition": "多个方格"
+      },
+      {
+        "label": "平均断面法",
+        "expression": "sum((Ai + Ai1) / 2 * Li)",
+        "condition": "纵断面"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "A",
+        "desc": "断面面积 A",
+        "unit": "m2"
+      },
+      {
+        "symbol": "L",
+        "desc": "开挖长度 L",
+        "unit": "m"
+      },
+      {
+        "symbol": "Ai",
+        "desc": "第 i 个方格面积 Ai",
+        "unit": "m2"
+      },
+      {
+        "symbol": "hi",
+        "desc": "第 i 个方格平均开挖深度 hi",
+        "unit": "m"
+      },
+      {
+        "symbol": "Li",
+        "desc": "第 i 段长度 Li",
+        "unit": "m"
+      }
+    ],
+    "domain": "GB 50500-2013 第 4 章，土方工程量",
+    "tags": [
+      "施工",
+      "土方",
+      "开挖",
+      "体积"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第4.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m³"
+  },
+  {
+    "id": "builtin:constr_concrete_volume",
+    "resultName": "混凝土浇筑体积",
+    "resultSymbol": "V",
+    "expression": "b * h * L",
+    "altExpressions": [
+      {
+        "label": "梁体积",
+        "expression": "b * h * L",
+        "condition": "矩形梁"
+      },
+      {
+        "label": "板体积",
+        "expression": "A * h",
+        "condition": "平板"
+      },
+      {
+        "label": "柱体积",
+        "expression": "b * h * H",
+        "condition": "矩形柱"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "b",
+        "desc": "宽度 b",
+        "unit": "m"
+      },
+      {
+        "symbol": "h",
+        "desc": "高度/厚度 h",
+        "unit": "m"
+      },
+      {
+        "symbol": "L",
+        "desc": "长度 L",
+        "unit": "m"
+      },
+      {
+        "symbol": "H",
+        "desc": "柱高 H",
+        "unit": "m"
+      },
+      {
+        "symbol": "A",
+        "desc": "板面积 A",
+        "unit": "m2"
+      }
+    ],
+    "domain": "GB 50500-2013 第 5 章，混凝土工程量",
+    "tags": [
+      "施工",
+      "混凝土",
+      "工程量",
+      "体积"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第5.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m³"
+  },
+  {
+    "id": "builtin:constr_rebar_weight",
+    "resultName": "钢筋重量计算",
+    "resultSymbol": "W",
+    "expression": "L * d^2 * 0.00617",
+    "altExpressions": [
+      {
+        "label": "总重量",
+        "expression": "sum(Li * di^2 * 0.00617)",
+        "condition": "多根钢筋"
+      }
+    ],
+    "constants": {
+      "rho": 0.00617
+    },
+    "variables": [
+      {
+        "symbol": "L",
+        "desc": "钢筋长度 L",
+        "unit": "m"
+      },
+      {
+        "symbol": "d",
+        "desc": "钢筋直径 d",
+        "unit": "mm"
+      }
+    ],
+    "domain": "GB 50500-2013 第 5 章，钢筋工程量",
+    "tags": [
+      "施工",
+      "钢筋",
+      "重量",
+      "工程量"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第5.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kg"
+  },
+  {
+    "id": "builtin:constr_formwork_area",
+    "resultName": "模板工程量面积",
+    "resultSymbol": "A",
+    "expression": "2 * (b + h) * L",
+    "altExpressions": [
+      {
+        "label": "梁模板",
+        "expression": "2 * (b + h) * L",
+        "condition": "矩形梁"
+      },
+      {
+        "label": "柱模板",
+        "expression": "2 * (b + h) * H",
+        "condition": "矩形柱"
+      },
+      {
+        "label": "板模板",
+        "expression": "A",
+        "condition": "平板底模"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "b",
+        "desc": "截面宽度 b",
+        "unit": "m"
+      },
+      {
+        "symbol": "h",
+        "desc": "截面高度 h",
+        "unit": "m"
+      },
+      {
+        "symbol": "L",
+        "desc": "梁长 L",
+        "unit": "m"
+      },
+      {
+        "symbol": "H",
+        "desc": "柱高 H",
+        "unit": "m"
+      },
+      {
+        "symbol": "A",
+        "desc": "板面积 A",
+        "unit": "m2"
+      }
+    ],
+    "domain": "GB 50500-2013 第 5 章，模板工程量",
+    "tags": [
+      "施工",
+      "模板",
+      "工程量",
+      "面积"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第5.3.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m²"
+  },
+  {
+    "id": "builtin:constr_masonry_volume",
+    "resultName": "砌筑工程量",
+    "resultSymbol": "V",
+    "expression": "L * H * delta",
+    "altExpressions": [
+      {
+        "label": "扣除门窗",
+        "expression": "L * H * delta - sum(Ai)",
+        "condition": "有门窗洞口"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "L",
+        "desc": "墙长 L",
+        "unit": "m"
+      },
+      {
+        "symbol": "H",
+        "desc": "墙高 H",
+        "unit": "m"
+      },
+      {
+        "symbol": "delta",
+        "desc": "墙厚 delta",
+        "unit": "m"
+      },
+      {
+        "symbol": "Ai",
+        "desc": "第 i 个洞口面积 Ai",
+        "unit": "m2"
+      }
+    ],
+    "domain": "GB 50500-2013 第 6 章，砌筑工程量",
+    "tags": [
+      "施工",
+      "砌筑",
+      "工程量",
+      "体积"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第6.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m³"
+  },
+  {
+    "id": "builtin:constr_curing_time",
+    "resultName": "混凝土养护时间",
+    "resultSymbol": "t",
+    "expression": "t0 * (fcu / fcu_k)^0.5",
+    "altExpressions": [],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "t0",
+        "desc": "标准养护时间 t0",
+        "unit": "d",
+        "default": 7
+      },
+      {
+        "symbol": "fcu",
+        "desc": "实测强度 fcu",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "fcu_k",
+        "desc": "配合强度 fcu_k",
+        "unit": "MPa"
+      }
+    ],
+    "domain": "JGJ 55-2011 第 7 章，混凝土养护",
+    "tags": [
+      "施工",
+      "混凝土",
+      "养护",
+      "时间"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 55-2011 第7.1.2条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "d"
+  },
+  {
+    "id": "builtin:budget_unit_price",
+    "resultName": "单价分析综合单价",
+    "resultSymbol": "P",
+    "expression": "(renCaiJi + caiLiaoFei + jiXieFei) * (1 + guanLiFeiLv + liRunFeiLv)",
+    "altExpressions": [],
+    "constants": {
+      "guanLiFeiLv": 0.08,
+      "liRunFeiLv": 0.05
+    },
+    "variables": [
+      {
+        "symbol": "renCaiJi",
+        "desc": "人工费",
+        "unit": "yuan"
+      },
+      {
+        "symbol": "caiLiaoFei",
+        "desc": "材料费",
+        "unit": "yuan"
+      },
+      {
+        "symbol": "jiXieFei",
+        "desc": "机械费",
+        "unit": "yuan"
+      },
+      {
+        "symbol": "guanLiFeiLv",
+        "desc": "管理费率",
+        "unit": "",
+        "default": 0.08
+      },
+      {
+        "symbol": "liRunFeiLv",
+        "desc": "利润率",
+        "unit": "",
+        "default": 0.05
+      }
+    ],
+    "domain": "GB 50500-2013 第 3 章，单价编制",
+    "tags": [
+      "预算",
+      "单价",
+      "综合单价",
+      "造价"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第3.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算直接费",
+        "group": "",
+        "expression": "zhijieFei = renCaiJi + caiLiaoFei + jiXieFei",
+        "unit": "",
+        "note": null
+      },
+      {
+        "symbol": "step_2",
+        "label": "计算综合单价 P",
+        "group": "",
+        "expression": "P = zhijieFei * (1 + guanLiFeiLv + liRunFeiLv)",
+        "unit": "",
+        "note": null
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "元"
+  },
+  {
+    "id": "builtin:budget_measure_cost",
+    "resultName": "措施项目费计算",
+    "resultSymbol": "C",
+    "expression": "zhiJieFei * cuoShiFeiLv",
+    "altExpressions": [
+      {
+        "label": "安全文明施工费",
+        "expression": "zhiJieFei * 0.03",
+        "condition": "按当地标准"
+      }
+    ],
+    "constants": {
+      "cuoShiFeiLv": 0.03
+    },
+    "variables": [
+      {
+        "symbol": "zhiJieFei",
+        "desc": "直接费",
+        "unit": "yuan"
+      },
+      {
+        "symbol": "cuoShiFeiLv",
+        "desc": "措施项目费率",
+        "unit": "",
+        "default": 0.03
+      }
+    ],
+    "domain": "GB 50500-2013 第 3 章，措施项目费",
+    "tags": [
+      "预算",
+      "措施费",
+      "安全文明施工费"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第3.3.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "元"
+  },
+  {
+    "id": "builtin:budget_tax_calculation",
+    "resultName": "建筑安装工程税金计算",
+    "resultSymbol": "Tax",
+    "expression": "yingShuiXiaoShouE * zengZhiShuiLv",
+    "altExpressions": [
+      {
+        "label": "简易计税",
+        "expression": "yingShuiXiaoShouE * zhengShouLv",
+        "condition": "小规模纳税人"
+      }
+    ],
+    "constants": {
+      "zengZhiShuiLv": 0.09,
+      "zhengShouLv": 0.03
+    },
+    "variables": [
+      {
+        "symbol": "yingShuiXiaoShouE",
+        "desc": "应税销售额",
+        "unit": "yuan"
+      },
+      {
+        "symbol": "zengZhiShuiLv",
+        "desc": "增值税税率",
+        "unit": "",
+        "default": 0.09
+      },
+      {
+        "symbol": "zhengShouLv",
+        "desc": "简易计税征收率",
+        "unit": "",
+        "default": 0.03
+      }
+    ],
+    "domain": "GB/T 50854-2013 第 4 章，税金计算",
+    "tags": [
+      "预算",
+      "税金",
+      "增值税",
+      "造价"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB/T 50854-2013 第4.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "元"
+  },
+  {
+    "id": "builtin:budget_total_cost",
+    "resultName": "建筑安装工程费用汇总",
+    "resultSymbol": "Total",
+    "expression": "danWeiFei + cuoShiFei + qiTaFei + guiFei + shuiJin",
+    "altExpressions": [],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "danWeiFei",
+        "desc": "单位工程费用",
+        "unit": "yuan"
+      },
+      {
+        "symbol": "cuoShiFei",
+        "desc": "措施项目费",
+        "unit": "yuan"
+      },
+      {
+        "symbol": "qiTaFei",
+        "desc": "其他项目费",
+        "unit": "yuan"
+      },
+      {
+        "symbol": "guiFei",
+        "desc": "规费",
+        "unit": "yuan"
+      },
+      {
+        "symbol": "shuiJin",
+        "desc": "税金",
+        "unit": "yuan"
+      }
+    ],
+    "domain": "GB 50500-2013 第 2 章，工程造价组成",
+    "tags": [
+      "预算",
+      "造价汇总",
+      "总价"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第2.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "元"
+  },
+  {
+    "id": "builtin:budget_provisional_sum",
+    "resultName": "暂列金额/计日工",
+    "resultSymbol": "C",
+    "expression": "jiRiDanJia * shuLiang",
+    "altExpressions": [],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "jiRiDanJia",
+        "desc": "计日工单价",
+        "unit": "yuan/gongRi"
+      },
+      {
+        "symbol": "shuLiang",
+        "desc": "工日数量",
+        "unit": "gongRi"
+      }
+    ],
+    "domain": "GB 50500-2013 第 3 章，计日工",
+    "tags": [
+      "预算",
+      "计日工",
+      "暂列金额"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第3.4.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "元"
+  },
+  {
+    "id": "builtin:budget_quota_consumption",
+    "resultName": "定额消耗量计算",
+    "resultSymbol": "Q",
+    "expression": "gongChengLiang * dingEDanWeiXiaoHaoLiang",
+    "altExpressions": [],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "gongChengLiang",
+        "desc": "工程量",
+        "unit": "m3/m2/m/t"
+      },
+      {
+        "symbol": "dingEDanWeiXiaoHaoLiang",
+        "desc": "定额单位消耗量",
+        "unit": "gongRi/m3, kg/m3, taiBan/m3"
+      }
+    ],
+    "domain": "GB 50500-2013 第 4 章，定额消耗量",
+    "tags": [
+      "预算",
+      "定额",
+      "消耗量",
+      "工程量"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50500-2013 第4.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "消耗量"
+  },
+  {
+    "id": "builtin:survey_distance",
+    "resultName": "水平距离计算",
+    "resultSymbol": "D",
+    "expression": "sqrt((x2 - x1)^2 + (y2 - y1)^2)",
+    "altExpressions": [
+      {
+        "label": "斜距转水平距",
+        "expression": "S * cos(alpha)",
+        "condition": "已知斜距 S 与垂直角 alpha"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "x1",
+        "desc": "点 1 X 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "y1",
+        "desc": "点 1 Y 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "x2",
+        "desc": "点 2 X 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "y2",
+        "desc": "点 2 Y 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "S",
+        "desc": "斜距 S",
+        "unit": "m"
+      },
+      {
+        "symbol": "alpha",
+        "desc": "垂直角 alpha",
+        "unit": "gon"
+      }
+    ],
+    "domain": "GB 50026-2007 第 4 章，距离测量",
+    "tags": [
+      "测量",
+      "距离",
+      "坐标",
+      "水平距离"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50026-2007 第4.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m"
+  },
+  {
+    "id": "builtin:survey_angle",
+    "resultName": "水平角/竖直角观测",
+    "resultSymbol": "beta",
+    "expression": "fangXiangZhiHou - fangXiangZhiQian",
+    "altExpressions": [
+      {
+        "label": "竖直角转高差",
+        "expression": "S * sin(alpha)",
+        "condition": "已知斜距 S 与竖直角 alpha"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "fangXiangZhiQian",
+        "desc": "前视方向值",
+        "unit": "du"
+      },
+      {
+        "symbol": "fangXiangZhiHou",
+        "desc": "后视方向值",
+        "unit": "du"
+      },
+      {
+        "symbol": "S",
+        "desc": "斜距 S",
+        "unit": "m"
+      },
+      {
+        "symbol": "alpha",
+        "desc": "竖直角 alpha",
+        "unit": "du"
+      }
+    ],
+    "domain": "GB 50026-2007 第 6 章，角度测量",
+    "tags": [
+      "测量",
+      "角度",
+      "水平角",
+      "竖直角",
+      "全站仪"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50026-2007 第6.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "°"
+  },
+  {
+    "id": "builtin:survey_coordinate",
+    "resultName": "坐标正/反算",
+    "resultSymbol": "X,Y",
+    "expression": "X2 = X1 + D * cos(alpha); Y2 = Y1 + D * sin(alpha)",
+    "altExpressions": [
+      {
+        "label": "反算方位角距离",
+        "expression": "alpha = atan2(Y2-Y1, X2-X1); D = sqrt((X2-X1)^2+(Y2-Y1)^2)",
+        "condition": "已知两点坐标"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "X1",
+        "desc": "已知点 X 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "Y1",
+        "desc": "已知点 Y 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "D",
+        "desc": "水平距离 D",
+        "unit": "m"
+      },
+      {
+        "symbol": "alpha",
+        "desc": "方位角 alpha",
+        "unit": "du"
+      }
+    ],
+    "domain": "GB 50026-2007 第 7 章，坐标计算",
+    "tags": [
+      "测量",
+      "坐标",
+      "正算",
+      "反算",
+      "GPS"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50026-2007 第7.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "正算：由已知点、距离、角度求新点坐标",
+        "expression": "X2 = X1 + D*cos(alpha); Y2 = Y1 + D*sin(alpha)"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m"
+  },
+  {
+    "id": "builtin:survey_gps_baseline",
+    "resultName": "GPS 基线向量解算",
+    "resultSymbol": "dX,dY,dZ",
+    "expression": "dX = X2-X1; dY = Y2-Y1; dZ = Z2-Z1",
+    "altExpressions": [],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "X1",
+        "desc": "基准站 X 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "Y1",
+        "desc": "基准站 Y 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "Z1",
+        "desc": "基准站 Z 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "X2",
+        "desc": "新点 X 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "Y2",
+        "desc": "新点 Y 坐标",
+        "unit": "m"
+      },
+      {
+        "symbol": "Z2",
+        "desc": "新点 Z 坐标",
+        "unit": "m"
+      }
+    ],
+    "domain": "CJJ/T 8-2011 第 5 章，GPS 测量基线解算",
+    "tags": [
+      "测量",
+      "GPS",
+      "基线",
+      "RTK"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "CJJ/T 8-2011 第5.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m"
+  },
+  {
+    "id": "builtin:math_quadratic",
+    "resultName": "一元二次方程求根",
+    "resultSymbol": "x1,x2",
+    "expression": "(-b + sqrt(b^2 - 4*a*c)) / (2*a)",
+    "altExpressions": [
+      {
+        "label": "根 x2",
+        "expression": "(-b - sqrt(b^2 - 4*a*c)) / (2*a)",
+        "condition": "判别式 delta >= 0"
+      },
+      {
+        "label": "判别式 delta",
+        "expression": "b^2 - 4*a*c",
+        "condition": "delta < 0 无实根"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "a",
+        "desc": "二次项系数 a",
+        "unit": ""
+      },
+      {
+        "symbol": "b",
+        "desc": "一次项系数 b",
+        "unit": ""
+      },
+      {
+        "symbol": "c",
+        "desc": "常数项 c",
+        "unit": ""
+      }
+    ],
+    "domain": "数学基础，代数方程",
+    "tags": [
+      "通用",
+      "数学",
+      "方程",
+      "一元二次"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB/T 1.1-2020 附录A 数学基础",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算判别式 delta = b^2 - 4ac",
+        "expression": "delta = b^2 - 4*a*c"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": null
+  },
+  {
+    "id": "builtin:math_trigonometry",
+    "resultName": "三角函数基本关系",
+    "resultSymbol": "sin,cos,tan",
+    "expression": "sin(alpha)^2 + cos(alpha)^2",
+    "altExpressions": [
+      {
+        "label": "tan",
+        "expression": "sin(alpha) / cos(alpha)",
+        "condition": "cos(alpha) != 0"
+      },
+      {
+        "label": "正弦定理",
+        "expression": "a / sin(A)",
+        "condition": "三角形三边三角（结果为外接圆直径 2R）"
+      },
+      {
+        "label": "余弦定理",
+        "expression": "sqrt(b^2 + c^2 - 2*b*c*cos(A))",
+        "condition": "三角形两边夹角（求边 a）"
+      }
+    ],
+    "constants": {
+      "pi": 3.14159265359
+    },
+    "variables": [
+      {
+        "symbol": "alpha",
+        "desc": "角度 alpha",
+        "unit": "du"
+      },
+      {
+        "symbol": "a",
+        "desc": "边 a",
+        "unit": "m"
+      },
+      {
+        "symbol": "b",
+        "desc": "边 b",
+        "unit": "m"
+      },
+      {
+        "symbol": "c",
+        "desc": "边 c",
+        "unit": "m"
+      },
+      {
+        "symbol": "A",
+        "desc": "角 A",
+        "unit": "du"
+      },
+      {
+        "symbol": "B",
+        "desc": "角 B",
+        "unit": "du"
+      },
+      {
+        "symbol": "C",
+        "desc": "角 C",
+        "unit": "du"
+      },
+      {
+        "symbol": "R",
+        "desc": "外接圆半径 R",
+        "unit": "m"
+      }
+    ],
+    "domain": "数学基础，三角学",
+    "tags": [
+      "通用",
+      "数学",
+      "三角函数",
+      "三角形"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB/T 1.1-2020 附录B 三角学",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": null
+  },
+  {
+    "id": "builtin:math_geometry_area",
+    "resultName": "常用几何图形面积",
+    "resultSymbol": "A",
+    "expression": "pi * r^2",
+    "altExpressions": [
+      {
+        "label": "圆面积",
+        "expression": "pi * r^2",
+        "condition": "已知半径 r"
+      },
+      {
+        "label": "三角形面积",
+        "expression": "0.5 * b * h",
+        "condition": "已知底边 b 和高 h"
+      },
+      {
+        "label": "梯形面积",
+        "expression": "(a + b) * h / 2",
+        "condition": "已知上下底 a,b 和高 h"
+      },
+      {
+        "label": "扇形面积",
+        "expression": "pi * r^2 * alpha / 360",
+        "condition": "已知半径 r 和圆心角 alpha"
+      }
+    ],
+    "constants": {
+      "pi": 3.14159265359
+    },
+    "variables": [
+      {
+        "symbol": "r",
+        "desc": "圆半径 r",
+        "unit": "m"
+      },
+      {
+        "symbol": "b",
+        "desc": "底边/上底 b",
+        "unit": "m"
+      },
+      {
+        "symbol": "h",
+        "desc": "高 h",
+        "unit": "m"
+      },
+      {
+        "symbol": "a",
+        "desc": "下底 a",
+        "unit": "m"
+      },
+      {
+        "symbol": "alpha",
+        "desc": "圆心角 alpha",
+        "unit": "du"
+      }
+    ],
+    "domain": "数学基础，平面几何",
+    "tags": [
+      "通用",
+      "数学",
+      "几何",
+      "面积"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB/T 1.1-2020 附录C 平面几何",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m²"
+  },
+  {
+    "id": "builtin:math_geometry_volume",
+    "resultName": "常用几何体体积",
+    "resultSymbol": "V",
+    "expression": "pi * r^2 * h",
+    "altExpressions": [
+      {
+        "label": "圆柱体积",
+        "expression": "pi * r^2 * h",
+        "condition": "已知半径 r 和高 h"
+      },
+      {
+        "label": "圆锥体积",
+        "expression": "pi * r^2 * h / 3",
+        "condition": "已知底面半径 r 和高 h"
+      },
+      {
+        "label": "球体积",
+        "expression": "4/3 * pi * r^3",
+        "condition": "已知半径 r"
+      },
+      {
+        "label": "棱柱体积",
+        "expression": "底面积 * 高",
+        "condition": "已知底面积和高"
+      }
+    ],
+    "constants": {
+      "pi": 3.14159265359
+    },
+    "variables": [
+      {
+        "symbol": "r",
+        "desc": "半径 r",
+        "unit": "m"
+      },
+      {
+        "symbol": "h",
+        "desc": "高 h",
+        "unit": "m"
+      }
+    ],
+    "domain": "数学基础，立体几何",
+    "tags": [
+      "通用",
+      "数学",
+      "几何",
+      "体积"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB/T 1.1-2020 附录D 立体几何",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m³"
+  },
+  {
+    "id": "builtin:pile_single_vertical_capacity",
+    "resultName": "单桩竖向极限承载力标准值",
+    "resultSymbol": "Quk",
+    "expression": "Qsk + Qpk",
+    "altExpressions": [
+      {
+        "label": "桩侧摩阻力",
+        "expression": "up * sum(qsik * li)",
+        "condition": "桩侧摩阻力总和"
+      },
+      {
+        "label": "桩端承载力",
+        "expression": "Ap * qpk",
+        "condition": "桩端承载力"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "Qsk",
+        "desc": "总桩侧摩阻力标准值 Qsk",
+        "unit": "kN"
+      },
+      {
+        "symbol": "Qpk",
+        "desc": "总桩端承载力标准值 Qpk",
+        "unit": "kN"
+      },
+      {
+        "symbol": "up",
+        "desc": "桩身周长 up",
+        "unit": "m"
+      },
+      {
+        "symbol": "qsik",
+        "desc": "第 i 层桩侧摩阻力标准值 qsik",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "li",
+        "desc": "第 i 层土厚度 li",
+        "unit": "m"
+      },
+      {
+        "symbol": "Ap",
+        "desc": "桩端面积 Ap",
+        "unit": "m2"
+      },
+      {
+        "symbol": "qpk",
+        "desc": "桩端土端阻力标准值 qpk",
+        "unit": "kPa"
+      }
+    ],
+    "domain": "JGJ 94-2008 第 5 章，桩基承载力",
+    "tags": [
+      "结构",
+      "桩基础",
+      "竖向承载力",
+      "极限承载力"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 94-2008 第5.3.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_2",
+        "label": "计算桩端承载力",
+        "expression": "Qpk = Ap * qpk"
+      },
+      {
+        "symbol": "step_3",
+        "label": "单桩竖向极限承载力",
+        "expression": "Quk = Qsk + Qpk"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:pile_vertical_feature_value",
+    "resultName": "单桩竖向承载力特征值",
+    "resultSymbol": "Ra",
+    "expression": "Quk / 2",
+    "altExpressions": [
+      {
+        "label": "静载试验",
+        "expression": "Quk / 2",
+        "condition": "试桩结果"
+      },
+      {
+        "label": "经验参数法",
+        "expression": "Ap * qpa + up * sum(qsia * li)",
+        "condition": "经验参数"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "Quk",
+        "desc": "单桩竖向极限承载力标准值",
+        "unit": "kN"
+      },
+      {
+        "symbol": "qpa",
+        "desc": "桩端土端阻力特征值 qpa",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "qsia",
+        "desc": "第 i 层桩侧摩阻力特征值 qsia",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "up",
+        "desc": "桩身周长 up",
+        "unit": "m"
+      },
+      {
+        "symbol": "li",
+        "desc": "第 i 层土厚度 li",
+        "unit": "m"
+      },
+      {
+        "symbol": "Ap",
+        "desc": "桩端面积 Ap",
+        "unit": "m2"
+      }
+    ],
+    "domain": "JGJ 94-2008 第 5 章，桩基承载力",
+    "tags": [
+      "结构",
+      "桩基础",
+      "竖向承载力",
+      "特征值"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 94-2008 第5.2.2条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "由极限承载力求特征值",
+        "expression": "Ra = Quk / 2"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:pile_horizontal_capacity",
+    "resultName": "单桩水平承载力特征值",
+    "resultSymbol": "Rha",
+    "expression": "Rha = v * ut * sqrt(d * fka) * (1 + 2*lambda) / (4 * alpha * d)",
+    "altExpressions": [
+      {
+        "label": "m 法计算",
+        "expression": "v * ut * sqrt(d * fka) * (1 + 2*lambda)",
+        "condition": "桩顶自由"
+      },
+      {
+        "label": "k 法计算",
+        "expression": "k_h * d * y_a",
+        "condition": "弹性地基反力法"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "v",
+        "desc": "桩侧土水平地基反力系数 v",
+        "unit": "kN/m3"
+      },
+      {
+        "symbol": "ut",
+        "desc": "桩计算宽度 ut",
+        "unit": "m"
+      },
+      {
+        "symbol": "d",
+        "desc": "桩径或截面宽度 d",
+        "unit": "m"
+      },
+      {
+        "symbol": "fka",
+        "desc": "桩侧土水平地基反力系数特征值 fka",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "lambda",
+        "desc": "综合系数 lambda",
+        "unit": ""
+      },
+      {
+        "symbol": "alpha",
+        "desc": "桩顶嵌固系数 alpha",
+        "unit": ""
+      },
+      {
+        "symbol": "k_h",
+        "desc": "地基水平反力系数 k_h",
+        "unit": "kN/m3"
+      },
+      {
+        "symbol": "y_a",
+        "desc": "桩顶允许水平位移 y_a",
+        "unit": "m"
+      }
+    ],
+    "domain": "JGJ 94-2008 第 5 章，桩基水平承载力",
+    "tags": [
+      "结构",
+      "桩基础",
+      "水平承载力",
+      "水平位移"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 94-2008 第5.4.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:pile_toe_resistance",
+    "resultName": "桩端土端阻力特征值计算",
+    "resultSymbol": "qpa",
+    "expression": "qpa = qp0 * psi_p * psi_s",
+    "altExpressions": [
+      {
+        "label": "查表法",
+        "expression": "qpa = qp0 * psi_p",
+        "condition": "经验系数"
+      },
+      {
+        "label": "原位测试法",
+        "expression": "qpa = (qsu * L) / (Ap * alpha_c)",
+        "condition": "静力触探"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "qpa",
+        "desc": "桩端土端阻力特征值 qpa",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "qp0",
+        "desc": "桩端土端阻力标准值 qp0",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "psi_p",
+        "desc": "桩端阻力修正系数 psi_p",
+        "unit": ""
+      },
+      {
+        "symbol": "psi_s",
+        "desc": "桩端尺寸修正系数 psi_s",
+        "unit": ""
+      },
+      {
+        "symbol": "qsu",
+        "desc": "桩侧摩阻力标准值 qsu",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "L",
+        "desc": "桩长 L",
+        "unit": "m"
+      },
+      {
+        "symbol": "Ap",
+        "desc": "桩端面积 Ap",
+        "unit": "m2"
+      },
+      {
+        "symbol": "alpha_c",
+        "desc": "桩端土阻力系数 alpha_c",
+        "unit": ""
+      }
+    ],
+    "domain": "JGJ 94-2008 第 5 章，桩端阻力",
+    "tags": [
+      "结构",
+      "桩基础",
+      "端阻力",
+      "承载力"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 94-2008 第5.3.2条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kPa"
+  },
+  {
+    "id": "builtin:pile_composite_capacity",
+    "resultName": "桩复合地基承载力特征值",
+    "resultSymbol": "f_spk",
+    "expression": "m * Ra / Ap + beta * (1 - m) * f_sk",
+    "altExpressions": [
+      {
+        "label": "褥垫层法",
+        "expression": "m * Ra / Ap + beta * (1 - m) * f_sk",
+        "condition": "有褥垫层"
+      },
+      {
+        "label": "无褥垫层",
+        "expression": "m * Ra / Ap + (1 - m) * f_sk",
+        "condition": "无褥垫层"
+      }
+    ],
+    "constants": {
+      "beta": 0.9
+    },
+    "variables": [
+      {
+        "symbol": "f_spk",
+        "desc": "复合地基承载力特征值 f_spk",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "m",
+        "desc": "桩面积置换率 m",
+        "unit": ""
+      },
+      {
+        "symbol": "Ra",
+        "desc": "单桩竖向承载力特征值 Ra",
+        "unit": "kN"
+      },
+      {
+        "symbol": "Ap",
+        "desc": "桩端面积 Ap",
+        "unit": "m2"
+      },
+      {
+        "symbol": "beta",
+        "desc": "桩间土承载力折减系数 beta",
+        "unit": "",
+        "default": 0.9
+      },
+      {
+        "symbol": "f_sk",
+        "desc": "处理后桩间土承载力特征值 f_sk",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "Lp",
+        "desc": "桩间距 Lp",
+        "unit": "m"
+      }
+    ],
+    "domain": "JGJ 79-2012 第 7 章，复合地基",
+    "tags": [
+      "结构",
+      "桩基础",
+      "复合地基",
+      "承载力"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 79-2012 第7.1.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算桩面积置换率",
+        "expression": "m = Ap / (Lp^2)"
+      },
+      {
+        "symbol": "step_2",
+        "label": "计算复合地基承载力",
+        "expression": "f_spk = m * Ra / Ap + beta * (1 - m) * f_sk"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kPa"
+  },
+  {
+    "id": "builtin:excavation_earth_pressure",
+    "resultName": "土压力计算(朗肯理论)",
+    "resultSymbol": "Ea",
+    "expression": "0.5 * gamma * H^2 * Ka - 2 * c * H * sqrt(Ka) + 2 * c^2 / gamma",
+    "altExpressions": [
+      {
+        "label": "主动土压力",
+        "expression": "0.5 * gamma * H^2 * Ka - 2 * c * H * sqrt(Ka)",
+        "condition": "无粘性土"
+      },
+      {
+        "label": "被动土压力",
+        "expression": "0.5 * gamma * H^2 * Kp + 2 * c * H * sqrt(Kp)",
+        "condition": "被动区"
+      }
+    ],
+    "constants": {
+      "pi": 3.14159265359
+    },
+    "variables": [
+      {
+        "symbol": "gamma",
+        "desc": "土的重度 gamma",
+        "unit": "kN/m3"
+      },
+      {
+        "symbol": "H",
+        "desc": "挡墙高度 H",
+        "unit": "m"
+      },
+      {
+        "symbol": "Ka",
+        "desc": "主动土压力系数 Ka = tan^2(45-phi/2)",
+        "unit": ""
+      },
+      {
+        "symbol": "Kp",
+        "desc": "被动土压力系数 Kp = tan^2(45+phi/2)",
+        "unit": ""
+      },
+      {
+        "symbol": "c",
+        "desc": "土的粘聚力 c",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "phi",
+        "desc": "土的内摩擦角 phi",
+        "unit": "du"
+      }
+    ],
+    "domain": "GB 50007-2011 第 6 章，土压力",
+    "tags": [
+      "结构",
+      "基坑支护",
+      "土压力",
+      "朗肯理论"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "GB 50007-2011 第6.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算土压力系数",
+        "group": "",
+        "expression": "Ka = tan((45 - phi/2) * pi / 180)^2; Kp = tan((45 + phi/2) * pi / 180)^2",
+        "unit": "",
+        "note": null
+      },
+      {
+        "symbol": "step_2",
+        "label": "计算主动土压力",
+        "group": "",
+        "expression": "Ea = 0.5 * gamma * H^2 * Ka - 2 * c * H * sqrt(Ka)",
+        "unit": "",
+        "note": null
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN/m"
+  },
+  {
+    "id": "builtin:excavation_anchorage",
+    "resultName": "锚杆承载力计算",
+    "resultSymbol": "T",
+    "expression": "T = sigma_p * Ap",
+    "altExpressions": [
+      {
+        "label": "预应力锚杆",
+        "expression": "sigma_p * Ap * psi_p",
+        "condition": "预应力"
+      },
+      {
+        "label": "土层锚杆",
+        "expression": "pi * d * L * f",
+        "condition": "土层锚杆"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "T",
+        "desc": "锚杆承载力 T",
+        "unit": "kN"
+      },
+      {
+        "symbol": "sigma_p",
+        "desc": "锚杆预应力 sigma_p",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "Ap",
+        "desc": "锚杆截面面积 Ap",
+        "unit": "mm2"
+      },
+      {
+        "symbol": "d",
+        "desc": "锚杆直径 d",
+        "unit": "m"
+      },
+      {
+        "symbol": "L",
+        "desc": "锚杆长度 L",
+        "unit": "m"
+      },
+      {
+        "symbol": "f",
+        "desc": "锚杆与土的摩阻力 f",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "psi_p",
+        "desc": "预应力损失系数 psi_p",
+        "unit": ""
+      }
+    ],
+    "domain": "JGJ 120-2012 第 6 章，锚杆支护",
+    "tags": [
+      "结构",
+      "基坑支护",
+      "锚杆",
+      "承载力"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 120-2012 第6.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算锚杆截面",
+        "expression": "Ap = T / (sigma_p * psi_p)"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:excavation_diaphragm_wall",
+    "resultName": "地下连续墙弯矩计算",
+    "resultSymbol": "M",
+    "expression": "gamma_0 * 0.5 * Ka * gamma * H^3 / 6",
+    "altExpressions": [
+      {
+        "label": "悬臂式",
+        "expression": "gamma_0 * 0.5 * Ka * gamma * H^3 / 6",
+        "condition": "悬臂式"
+      },
+      {
+        "label": "单锚式",
+        "expression": "gamma_0 * (Ea * (H/3 - a))",
+        "condition": "单锚"
+      },
+      {
+        "label": "多支撑",
+        "expression": "gamma_0 * sum(Eai * (H - hi))",
+        "condition": "多支撑"
+      }
+    ],
+    "constants": {
+      "gamma_0": 1.35
+    },
+    "variables": [
+      {
+        "symbol": "M",
+        "desc": "地下连续墙弯矩 M",
+        "unit": "kN*m/m"
+      },
+      {
+        "symbol": "gamma_0",
+        "desc": "基坑重要性系数 gamma_0",
+        "unit": "",
+        "default": 1.35
+      },
+      {
+        "symbol": "Ka",
+        "desc": "主动土压力系数 Ka",
+        "unit": ""
+      },
+      {
+        "symbol": "gamma",
+        "desc": "土的重度 gamma",
+        "unit": "kN/m3"
+      },
+      {
+        "symbol": "H",
+        "desc": "基坑深度 H",
+        "unit": "m"
+      },
+      {
+        "symbol": "Ea",
+        "desc": "主动土压力合力 Ea",
+        "unit": "kN/m"
+      },
+      {
+        "symbol": "a",
+        "desc": "锚杆距墙顶距离 a",
+        "unit": "m"
+      },
+      {
+        "symbol": "Eai",
+        "desc": "第 i 层土压力合力 Eai",
+        "unit": "kN/m"
+      },
+      {
+        "symbol": "hi",
+        "desc": "第 i 层土压力合力作用点高度 hi",
+        "unit": "m"
+      },
+      {
+        "symbol": "z",
+        "desc": "计算点深度 z",
+        "unit": "m"
+      }
+    ],
+    "domain": "JGJ 120-2012 第 6 章，地下连续墙",
+    "tags": [
+      "结构",
+      "基坑支护",
+      "地下连续墙",
+      "弯矩"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 120-2012 第6.4.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算土压力分布",
+        "expression": "sigma_a = Ka * gamma * z"
+      },
+      {
+        "symbol": "step_2",
+        "label": "计算合力",
+        "expression": "Ea = 0.5 * Ka * gamma * H^2"
+      },
+      {
+        "symbol": "step_3",
+        "label": "计算弯矩 M",
+        "expression": "M = gamma_0 * 0.5 * Ka * gamma * H^3 / 6"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN·m/m"
+  },
+  {
+    "id": "builtin:excavation_soil_nailing",
+    "resultName": "土钉墙承载力计算",
+    "resultSymbol": "T",
+    "expression": "pi * d * Le * f",
+    "altExpressions": [
+      {
+        "label": "土钉抗拔力",
+        "expression": "pi * d * Le * f",
+        "condition": "土钉抗拔"
+      },
+      {
+        "label": "土钉拉力",
+        "expression": "gamma_0 * sigma_a * Sx * Sy",
+        "condition": "土钉拉力"
+      }
+    ],
+    "constants": {
+      "pi": 3.14159265359
+    },
+    "variables": [
+      {
+        "symbol": "T",
+        "desc": "土钉抗拔力 T",
+        "unit": "kN"
+      },
+      {
+        "symbol": "d",
+        "desc": "土钉直径 d",
+        "unit": "m"
+      },
+      {
+        "symbol": "Le",
+        "desc": "土钉有效锚固长度 Le",
+        "unit": "m"
+      },
+      {
+        "symbol": "f",
+        "desc": "土钉与土的摩阻力 f",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "gamma_0",
+        "desc": "基坑重要性系数 gamma_0",
+        "unit": ""
+      },
+      {
+        "symbol": "sigma_a",
+        "desc": "土钉处土压力 sigma_a",
+        "unit": "kPa"
+      },
+      {
+        "symbol": "Sx",
+        "desc": "土钉水平间距 Sx",
+        "unit": "m"
+      },
+      {
+        "symbol": "Sy",
+        "desc": "土钉垂直间距 Sy",
+        "unit": "m"
+      }
+    ],
+    "domain": "JGJ 120-2012 第 6 章，土钉墙支护",
+    "tags": [
+      "结构",
+      "基坑支护",
+      "土钉墙",
+      "抗拔力"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 120-2012 第6.5.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算土钉抗拔力",
+        "expression": "T = pi * d * Le * f"
+      },
+      {
+        "symbol": "step_3",
+        "label": "计算土钉长度",
+        "expression": "Le = T / (pi * d * f)"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "kN"
+  },
+  {
+    "id": "builtin:excavation_groundwater",
+    "resultName": "基坑降水设计计算",
+    "resultSymbol": "Q",
+    "expression": "pi * k * (H^2 - h^2) / ln(R/rw)",
+    "altExpressions": [
+      {
+        "label": "单井涌水量",
+        "expression": "pi * k * (H^2 - h^2) / ln(R/rw)",
+        "condition": "完整井"
+      },
+      {
+        "label": "基坑总涌水量",
+        "expression": "1.366 * k * (2*H - S) * S / log(R/r0)",
+        "condition": "圆形基坑"
+      }
+    ],
+    "constants": {
+      "pi": 3.14159265359
+    },
+    "variables": [
+      {
+        "symbol": "Q",
+        "desc": "基坑涌水量 Q",
+        "unit": "m3/d"
+      },
+      {
+        "symbol": "k",
+        "desc": "渗透系数 k",
+        "unit": "m/d"
+      },
+      {
+        "symbol": "H",
+        "desc": "含水层厚度 H",
+        "unit": "m"
+      },
+      {
+        "symbol": "h",
+        "desc": "井内水位距不透水层高度 h",
+        "unit": "m"
+      },
+      {
+        "symbol": "R",
+        "desc": "影响半径 R",
+        "unit": "m"
+      },
+      {
+        "symbol": "rw",
+        "desc": "井管半径 rw",
+        "unit": "m"
+      },
+      {
+        "symbol": "S",
+        "desc": "水位降深 S",
+        "unit": "m"
+      },
+      {
+        "symbol": "r0",
+        "desc": "基坑等效半径 r0",
+        "unit": "m"
+      }
+    ],
+    "domain": "JGJ 120-2012 第 7 章，降水设计",
+    "tags": [
+      "结构",
+      "基坑支护",
+      "降水",
+      "涌水量"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 120-2012 第7.2.1条",
+      "verified": true
+    },
+    "stepsTemplate": [
+      {
+        "symbol": "step_1",
+        "label": "计算影响半径",
+        "expression": "R = 2 * S * sqrt(k * H)"
+      },
+      {
+        "symbol": "step_2",
+        "label": "计算单井涌水量",
+        "expression": "Q = pi * k * (H^2 - h^2) / ln(R/rw)"
+      }
+    ],
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "m³/d"
+  },
+  {
+    "id": "builtin:excavation_deformation",
+    "resultName": "基坑水平位移计算",
+    "resultSymbol": "delta_h",
+    "expression": "delta_h = delta_h1 + delta_h2 + delta_h3",
+    "altExpressions": [
+      {
+        "label": "悬臂式位移",
+        "expression": "0.1 * H * (Ka * gamma * H / (E * I))^0.25",
+        "condition": "悬臂式"
+      },
+      {
+        "label": "锚拉式位移",
+        "expression": "0.05 * H * (Ka * gamma * H / (E * I))^0.25",
+        "condition": "锚拉式"
+      }
+    ],
+    "constants": {},
+    "variables": [
+      {
+        "symbol": "delta_h",
+        "desc": "基坑总水平位移 delta_h",
+        "unit": "mm"
+      },
+      {
+        "symbol": "delta_h1",
+        "desc": "墙体弹性变形位移 delta_h1",
+        "unit": "mm"
+      },
+      {
+        "symbol": "delta_h2",
+        "desc": "墙体刚体转动位移 delta_h2",
+        "unit": "mm"
+      },
+      {
+        "symbol": "delta_h3",
+        "desc": "墙体整体滑动位移 delta_h3",
+        "unit": "mm"
+      },
+      {
+        "symbol": "H",
+        "desc": "基坑深度 H",
+        "unit": "m"
+      },
+      {
+        "symbol": "Ka",
+        "desc": "主动土压力系数 Ka",
+        "unit": ""
+      },
+      {
+        "symbol": "gamma",
+        "desc": "土的重度 gamma",
+        "unit": "kN/m3"
+      },
+      {
+        "symbol": "E",
+        "desc": "墙体弹性模量 E",
+        "unit": "MPa"
+      },
+      {
+        "symbol": "I",
+        "desc": "墙体惯性矩 I",
+        "unit": "m4"
+      }
+    ],
+    "domain": "JGJ 120-2012 第 7 章，基坑变形控制",
+    "tags": [
+      "结构",
+      "基坑支护",
+      "位移",
+      "变形"
+    ],
+    "source": {
+      "kind": "STANDARD",
+      "ref": "JGJ 120-2012 第7.3.1条",
+      "verified": true
+    },
+    "stepsTemplate": null,
+    "createdAt": 1725600000000,
+    "updatedAt": 1725600000000,
+    "resultUnit": "mm"
+  }
+]

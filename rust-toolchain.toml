@@ -1,0 +1,6 @@
+# 锁定工具链，保证 CI 与本地一致
+# 依据：docs/02-PC端迁移与开发规划.md §10.1
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
+targets = ["x86_64-pc-windows-msvc"]

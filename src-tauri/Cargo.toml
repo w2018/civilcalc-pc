@@ -1,0 +1,56 @@
+[package]
+name = "civilcalc-pc"
+description = "AI全能计算器 · PC 端"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# Tauri 要求 lib 名称与 bin 名称可区分
+[lib]
+name = "civilcalc_pc_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# ---- Tauri ----
+# 🔴 `protocol-asset` **必须**与 `tauri.conf.json` 的
+#    `app.security.assetProtocol.enable = true` **成对出现**：
+#    - 少了 feature，`Scopes.asset_protocol` 字段会被 `#[cfg]` 整个编译掉，
+#      前端 `convertFileSrc()` 产出的 `asset:` URL 一律加载失败
+#      （背景图就是靠它显示的）
+#    - 少了配置项，`tauri-build` 会直接报
+#      「The `tauri` dependency features … does not match the allowlist」
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-log = "2"
+
+# ---- 内部 crate（五个业务 crate 均不依赖 tauri）----
+civilcalc-core.workspace = true
+civilcalc-store.workspace = true
+civilcalc-llm.workspace = true
+civilcalc-backup.workspace = true
+civilcalc-report.workspace = true
+
+# ---- 基础设施 ----
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+once_cell.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+dirs.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+keyring.workspace = true
+image.workspace = true
+# 剪贴板图片没有文件路径，只能以 base64 传字节（`image_save_from_bytes`）
+base64.workspace = true
+
+# ⚠️ 注意这里**没有 rusqlite**：数据访问全部在 civilcalc-store 里（ADR-025），
+#    本壳只通过 `civilcalc_store::Db` 调用，不直接写 SQL。

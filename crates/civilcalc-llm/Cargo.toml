@@ -1,0 +1,26 @@
+[package]
+name = "civilcalc-llm"
+description = "AI全能计算器 PC 端 LLM 层（从 Android :core/llm 移植）"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# ⚠️ 硬约束（ADR-002）：**不得依赖 `tauri`**。
+#
+# 依赖方向（docs/02 的依赖图）：`llm → civilcalc-core` 是**允许且必需**的 ——
+# `normalizer` 要产出 `FormulaSchema`、调 `validate_schema` / `ResultOutputs::sanitize`。
+# 真正的约束是**不反向**：`civilcalc-core` 不依赖 `llm`（core 不含 HTTP）。
+#
+# > 本文件原先写「不得依赖 civilcalc-core（避免循环）」——**与 docs/02 的依赖图矛盾**，
+# > 已修正（P4-4）。`civilcalc-report` 早已按同一方向依赖 core，两者是同级的兄弟 crate。
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+futures-util.workspace = true
+uuid.workspace = true
+civilcalc-core.workspace = true

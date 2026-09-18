@@ -1,0 +1,101 @@
+# =============================================================================
+# AI全能计算器 · PC 端（civilcalc-pc）
+# 六 crate workspace —— 见 docs/03-架构决策记录.md ADR-002 / ADR-025
+#
+# 划分依据：严格对齐源项目 civilcalc-android-v2 的模块边界，
+# 使每个 crate 可独立移植、独立测试、独立并行开发。
+#
+# ⚠️ 依赖版本说明：下表中标 TODO 的版本需在开工时用 `cargo add` 解析确认。
+# =============================================================================
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/civilcalc-core",   # 领域层：schema/engine/excel/display/verify/version/search/source/reset/builtin/log
+    "crates/civilcalc-store",  # 持久化层：SQLite 访问（唯一依赖 rusqlite 的 crate，ADR-025）
+    "crates/civilcalc-llm",    # 服务层：LLM 双协议 / 流式 / 思考强度 / 用量归一化
+    "crates/civilcalc-backup", # 服务层：tar.gz / 加密 / WebDAV / 归档模型
+    "crates/civilcalc-report", # 服务层：docx 生成 / 模板模型 / 导出选项 / 文本清洗
+    "src-tauri",               # 应用层：Tauri 壳 + 命令
+]
+
+[workspace.package]
+version = "1.0.11"
+edition = "2021"
+license = "GPL-3.0-only"
+# 与源项目 LICENSE（GNU GPL v3.0）保持一致
+
+[workspace.dependencies]
+# ---- 序列化与错误 ----
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+
+# ---- 日志与基础设施 ----
+tracing = "0.1"
+# `civilcalc-core::log` 的转发目标：`tauri-plugin-log` 只认 `log` crate 的记录，
+# 不转发的话配置文件里配的 stdout / logDir 会得到一个**永远 0 字节的日志文件**
+log = "0.4"
+once_cell = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+regex = "1"
+dirs = "5"
+
+# ---- 数据库（仅 civilcalc-store 使用）----
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# ---- 网络（llm / backup / src-tauri 共用）----
+# rustls-tls：避免 OpenSSL 交叉编译问题
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+tokio = { version = "1", features = ["full"] }
+# 流式读 SSE 用（`reqwest` 的 `bytes_stream()` 需要 `StreamExt`）
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+
+# ---- 报告生成 ----
+docx-rs = { version = "0.4", default-features = false, features = ["image"] }
+
+# ---- 检索 ----
+# TODO: 待核实（用 `cargo add pinyin` 确认最新版本）
+pinyin = "0.10"
+
+# ---- 备份（tar.gz + 加密 + XML）----
+flate2 = "1"
+pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
+aes-gcm = "0.10"
+sha2 = "0.10"
+rand = "0.8"
+quick-xml = "0.36"
+
+# ---- 图片 ----
+image = "0.25"
+# data URL 编解码（civilcalc-store 的图片存储）
+# ⚠️ 不引 sha1 crate：其索引条目不在本机离线缓存里。
+#    图片去重用的 SHA-1 改为**自实现**（见 civilcalc-store/src/sha1.rs）——
+#    算法简单且有标准测试向量，且能保证与 Android 端文件名逐字节一致。
+base64 = "0.22"
+
+# ---- 密钥存储（仅 src-tauri 使用）----
+keyring = { version = "3", features = ["windows-native"] }
+
+# ---- 内部 crate ----
+civilcalc-core = { path = "crates/civilcalc-core" }
+civilcalc-store = { path = "crates/civilcalc-store" }
+civilcalc-llm = { path = "crates/civilcalc-llm" }
+civilcalc-backup = { path = "crates/civilcalc-backup" }
+civilcalc-report = { path = "crates/civilcalc-report" }
+
+# =============================================================================
+# Profile
+# 注意：不设 panic = "abort" —— Tauri 需要 unwind 才能捕获 panic
+# =============================================================================
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true
+overflow-checks = true

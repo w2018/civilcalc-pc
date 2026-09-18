@@ -1,0 +1,239 @@
+/* =============================================================================
+ * 设计令牌 · 微信扁平风（WeChat Flat）
+ *
+ * 依据 docs/05-项目开发方案.md §2.3.1 与 docs/03-架构决策记录.md ADR-004 / ADR-012
+ *
+ * 核心特征：无阴影、无渐变、无粗边框；以「白色卡片 + 浅灰底 + 细分隔线」建立层次；
+ * 单一主色（微信绿）承载全部强调语义；输入控件用底线而非四边框；列表用卡片行 + 右箭头。
+ *
+ * ⚠️ 组件**禁止硬编码颜色**，一律使用本文件的 CSS 变量。
+ * ⚠️ 三个数据属性正交：
+ *      data-theme        → 卡片 / 边框 / 控件 / 徽章的色板（light / dark）
+ *      data-bg           → 页面底色是否被用户覆盖（default / custom）
+ *      data-bg-contrast  → 文字色组（由背景亮度自动推导）
+ * ========================================================================== */
+
+:root {
+  /* ===== 主色：微信绿（唯一强调色）===== */
+  --c-primary: #07c160;
+  --c-primary-hover: #06ad56;
+  --c-primary-active: #059748;
+  --c-primary-light: #e8f8ef; /* 选中行 / 标签底 */
+
+  /* ===== 语义色（扁平、低饱和）===== */
+  --c-success: #07c160; /* 微信风格中"成功"即主色 */
+  --c-warning: #fa9d3b;
+  --c-danger: #fa5151; /* 微信红 */
+  --c-link: #576b95; /* 微信链接蓝灰 */
+
+  /* ===== 背景与容器：层次靠"底色差 + 分割线"，不靠阴影 ===== */
+  --c-bg: #f2f2f2; /* 页面底 */
+  --c-bg-base: #f2f2f2; /* `html` 底色：**永不透明**（避免 WebView 闪白） */
+  --c-bg-custom: #f2f2f2; /* 可被用户覆盖的应用背景 */
+  --c-surface: #ffffff; /* 卡片面 */
+  --c-surface-2: #fafafa; /* 次级面：表头 / 斑马纹 / 禁用底 */
+  --c-surface-hover: #f5f5f5;
+  --c-divider: #e5e5e5; /* 分割线：1px hairline */
+
+  /* 区块面 / 区块框线：默认等同卡片面、无框线。
+     开启自定义背景图时由下方 `html[data-bg-image='on']` 换成半透明 + 主色框线
+     （需求 10：背景图要能透出来，但每个区块仍要看得清边界）。 */
+  --c-surface-block: var(--c-surface);
+  --c-surface-2-block: var(--c-surface-2);
+  --c-frame: transparent;
+
+  /* ===== 文字（随主题变化；组件禁止硬编码）===== */
+  --c-text: #191919;
+  --c-text-2: #576b95; /* 次要文本（微信风用蓝灰） */
+  --c-text-3: #b2b2b2; /* 占位 / 禁用 / 辅助 */
+  --c-text-inverse: #ffffff;
+
+  /* ===== 数学排版（P3-12）：变量/函数/运算符按语义上色 =====
+   * 与「来源徽章」同源色系，保持整站色语义一致。 */
+  --c-math-symbol: #07c160;   /* 变量 / 常量：主色（绿） */
+  --c-math-function: #a66be8;  /* 函数名：与 AI 紫同源 */
+  --c-math-operator: #576b95;  /* 运算符：蓝灰 */
+  --c-math-number: #191919;    /* 数字：正文色 */
+  --c-math-bracket: #8c8c8c;   /* 括号 / 竖线 / 根号横线：中性灰 */
+
+  /* ===== 来源徽章色（对齐源项目 SourceKind）===== */
+  --c-src-standard: #576b95; /* 🔵 STANDARD */
+  --c-src-ai: #a66be8; /* 🟣 AI */
+  --c-src-custom: #8c8c8c; /* ⚪ CUSTOM */
+  --c-src-derived: #07c160; /* 🟢 DERIVED */
+
+  /* ===== 间距（8px 基准）===== */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* ===== 圆角（微信风：卡片 10px、按钮大圆角、Dialog 更大）===== */
+  --r-card: 10px;
+  --r-btn: 10px;
+  --r-dialog: 16px;
+  --r-pill: 9999px;
+  --r-sm: 4px;
+
+  /* ===== 字体 ===== */
+  --f-sans: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+  --f-size-xs: 12px;
+  --f-size-sm: 13px;
+  --f-size-base: 14px;
+  --f-size-lg: 16px;
+  --f-size-xl: 18px;
+  --f-size-2xl: 24px;
+  --f-size-3xl: 32px;
+
+  /* ===== 列表 ===== */
+  --row-h: 56px; /* 卡片行高 */
+  --hairline: 1px; /* 分割线宽度 */
+
+  /* ===== 阴影：微信扁平风 = 不用 ===== */
+  --shadow-none: none;
+  --shadow-dialog: 0 -2px 16px rgba(0, 0, 0, 0.06); /* 仅底部弹出层允许极轻阴影 */
+}
+
+/* =============================================================================
+ * 暗色主题（跟随系统 / 手动切换）
+ * 注意：**独立设计色板**，不是简单反色
+ * ========================================================================== */
+[data-theme='dark'] {
+  --c-primary: #07c160;
+  --c-primary-hover: #06ad56;
+  --c-primary-light: #10301f;
+
+  --c-bg: #111111;
+  --c-bg-base: #111111; /* `html` 底色：永不透明 */
+  --c-surface: #1e1e1e;
+  --c-surface-2: #262626;
+  --c-surface-hover: #2a2a2a;
+  --c-divider: #2e2e2e;
+
+  --c-text: #ededed;
+  --c-text-2: #a3aab8;
+  --c-text-3: #6b6b6b;
+
+  /* 数学排版深色版：在深色背景上提亮，保持可读性 */
+  --c-math-symbol: #2ecc71;
+  --c-math-function: #b98be8;
+  --c-math-operator: #a3aab8;
+  --c-math-number: #ededed;
+  --c-math-bracket: #8c8c8c;
+
+  --c-src-standard: #a3aab8;
+  --c-src-ai: #b98be8;
+  --c-src-custom: #8c8c8c;
+  --c-src-derived: #07c160;
+
+  --shadow-dialog: 0 -2px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* =============================================================================
+ * 自定义应用背景（ADR-012 / docs/05 §2.3.6）：独立覆盖层
+ * ========================================================================== */
+[data-bg='custom'] {
+  --c-bg: var(--c-bg-custom);
+}
+
+/* 背景亮度决定文字色组；主题决定卡片/边框/控件色板 —— 二者正交 */
+[data-bg-contrast='light-text'] {
+  --c-text: #ededed;
+  --c-text-2: #a3aab8;
+  --c-text-3: #6b6b6b;
+}
+
+[data-bg-contrast='dark-text'] {
+  --c-text: #191919;
+  --c-text-2: #576b95;
+  --c-text-3: #b2b2b2;
+}
+
+/* =============================================================================
+ * 响应式断点（docs/05 §2.3.5）
+ *   紧凑  < 1100px  → 侧边导航折叠为图标；ParamForm 单列
+ *   标准  1100–1600 → 侧边导航展开
+ *   宽屏  > 1600px  → ParamForm 与 ResultPanel 左右双栏
+ * ========================================================================== */
+:root {
+  --bp-compact: 1100px;
+  --bp-wide: 1600px;
+}
+
+/* =============================================================================
+ * 用户自定义文字色：优先级**高于**主题与背景对比度
+ *
+ * 用 `data-text-custom="on"` 开关而不是直接把 `--c-text` 写成变量链 ——
+ * 后者会让 `[data-theme='dark']` 里的定义被意外穿透。
+ * ========================================================================== */
+html[data-text-custom='on'] {
+  --c-text: var(--c-text-override);
+  --c-text-2: var(--c-text-override);
+  --c-text-3: var(--c-text-override);
+}
+
+/* =============================================================================
+ * 自定义背景图（流程 7 / 需求 10）
+ *
+ * ## 图层顺序
+ *
+ * ```
+ * html 底色（--c-bg-base，永不透明）
+ *   └ body 底色（--c-bg；开背景图时透明）
+ *       └ body::before  ← 背景图（z-index: -1，在**所有内容之下**）
+ *           └ #app（z-index: 1）← 文字与区块
+ * ```
+ *
+ * 用 `body::before` 固定层而非 `background-attachment: fixed` ——
+ * 后者在 WebView2 里滚动时会重绘整屏，长列表明显掉帧。
+ *
+ * ## 🔴 需求 10：区块面半透明 + 彩色框线
+ *
+ * 原来区块面是不透明的 `--c-surface`，背景图只能从卡片之间的缝隙里露出来
+ * —— 设了图跟没设一样。现在开了背景图时改用 `--c-surface-block`（半透明），
+ * 并给每个区块描一条**彩色框线**（`--c-frame`），
+ * 否则区块边界会消失在花纹里，页面看起来糊成一片。
+ *
+ * ⚠️ 框线用 `outline` 而不是 `border`：`border` 会改变盒模型尺寸、
+ * 还会盖掉组件自己的 `border-left`（如思考中的主色左线）。
+ * `outline-offset: -1px` 让它画在区块内侧，效果与内描边一致。
+ * ========================================================================== */
+html[data-bg-image='on'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: var(--bg-transparency, 0.22);
+  pointer-events: none;
+}
+
+/* 背景图开启时页面底必须透明，否则图被 `--c-bg` 盖住 */
+html[data-bg-image='on'] {
+  --c-bg: transparent;
+}
+
+/* 浅色主题下的半透明区块面 + 主色淡框线。
+   alpha 由 `useBackground.setTransparency` 写进 `--bg-surface-alpha`
+   （需求 3：区块面的透光度跟着「透明度」滑块走），这里只给默认值兜底。 */
+html[data-bg-image='on'] {
+  --c-surface-block: rgb(255 255 255 / var(--bg-surface-alpha, 0.86));
+  --c-surface-2-block: rgb(250 250 250 / var(--bg-surface-alpha-2, 0.82));
+  --c-frame: color-mix(in srgb, var(--c-primary) 30%, transparent);
+}
+
+/* 暗色主题：用深色半透明面，框线同样取主色（在深底上更亮一点才看得见） */
+html[data-theme='dark'][data-bg-image='on'] {
+  --c-surface-block: rgb(30 30 30 / var(--bg-surface-alpha, 0.84));
+  --c-surface-2-block: rgb(38 38 38 / var(--bg-surface-alpha-2, 0.8));
+  --c-frame: color-mix(in srgb, var(--c-primary) 42%, transparent);
+}
+

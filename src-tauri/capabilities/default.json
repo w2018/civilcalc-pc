@@ -1,0 +1,22 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "主窗口默认权限（最小权限原则，禁止宽权限）。fs 只需 app 目录读写：『另存为 / 导入配置』要写用户选定的任意路径，靠的是 dialog 插件把选中文件动态加进 fs scope（`try_fs_scope().allow_file()`），不需要为此放开全盘。",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "dialog:allow-message",
+    "dialog:allow-confirm",
+
+    "fs:allow-app-read",
+    "fs:allow-app-write",
+
+    "opener:allow-open-path",
+    "opener:allow-open-url",
+
+    "log:default"
+  ]
+}

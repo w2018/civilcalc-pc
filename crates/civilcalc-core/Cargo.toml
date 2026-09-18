@@ -1,0 +1,23 @@
+[package]
+name = "civilcalc-core"
+description = "AI全能计算器 PC 端领域层（从 Android :core 移植）"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# ⚠️ 硬约束（ADR-002）：本 crate 不得依赖 tauri。
+# 依赖表中不出现 tauri，由 Cargo 天然强制。
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+log.workspace = true
+once_cell.workspace = true
+uuid.workspace = true
+regex.workspace = true
+pinyin.workspace = true
+
+[dev-dependencies]
+# 测试不引入额外依赖：本 crate 需可完全离线单测
