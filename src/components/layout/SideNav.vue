@@ -52,10 +52,23 @@ function isActive(item: NavItem): boolean {
  * 只是被路由带到了空态页）。
  *
  * 所以有「上次用的公式」时就回到它；没有才回落到空态入口。
+ *
+ * ## 🔴 连 `historyId` 一起带上
+ *
+ * 用户可能是从「历史」点某条记录进来的（`/formula/<id>?historyId=<n>`）。
+ * 只带 id 会落到**同一条公式的干净版本**上 —— 而路由守卫现在把
+ * 「同一公式换历史」也当作一次切换，于是点侧栏反而会弹「要切换公式吗？」，
+ * 用户明明只是想回到刚才那一条。
+ *
+ * 带上 `historyId` 后目标与当前位置**完全一致**，守卫直接放行，
+ * 工作台内容也不会被重建。
  */
 function targetOf(item: NavItem): string {
   if (item.name === 'formula' && formula.lastWorkspaceId) {
-    return `${item.to}/${formula.lastWorkspaceId}`
+    const base = `${item.to}/${formula.lastWorkspaceId}`
+    return formula.lastWorkspaceHistoryId
+      ? `${base}?historyId=${formula.lastWorkspaceHistoryId}`
+      : base
   }
   return item.to
 }

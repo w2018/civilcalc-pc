@@ -9,17 +9,19 @@
  * ```
  * [公式头部]  名称 / 来源徽章 / 领域 / 收藏 / 版本 / 表达式
  * [思考过程]  ThinkingBox（AI 解析时的思考，来自最近一次历史）
- * [参数区]    ParamForm（可折叠；首次算成功后自动收起）
+ * [参数区]    ParamForm（可折叠；**只由用户手动收起**）
  * [结果区]    ResultPanel（主结果 / 告警 / 多结果 / 分支）
  * [计算过程]  StepsList（分步 + Excel 公式）
  * [详解]      ExplanationPanel（分步依据 + {{img:N}} 内联图）
  * [Excel]     ExcelPanel（两模式切换）
  * ```
  *
- * ## 「自动收起参数区」只做一次
+ * ## 🔴 参数区**不做自动收起**
  *
- * 用户拖参数调值时不该每次都收起 —— 那样没法连续改第二个参数。
- * 所以只在**首次**求值成功时收起一次；之后用户自己控制。
+ * 曾经的做法是「首次求值成功后自动收起参数区」（源项目行为）。
+ * 实际上很碍事：用户输完一个参数、算出来 → 参数区自己收起来，
+ * 想再改一个就得先点开；连续试算几个取值时每次都要多点一下。
+ * 现在收起**只由用户手动触发**（点标题行）。
  *
  * ## 历史写入是显式动作
  *
@@ -74,12 +76,15 @@ const historyId = computed<number | null>(() => {
 })
 
 const favorite = ref(false)
-/** 参数区是否收起 */
+/**
+ * 参数区是否收起。
+ *
+ * ⚠️ **只由用户手动切换**，求值成功不会自动收起（见文件头说明）。
+ * 换一条公式时回到展开态（`load()` 里重置）。
+ */
 const paramsCollapsed = ref(false)
 /** Excel 公式区是否收起（需求 5：默认收起 —— 它是「拿走用」的辅助信息，不是主线） */
 const excelCollapsed = ref(true)
-/** 「自动收起」是否已经做过（只做一次） */
-const autoCollapsed = ref(false)
 
 /** 参数表单实例（用于 Domain 错误时聚焦字段） */
 const paramFormRef = ref<{ focusField: (symbol: string) => void } | null>(null)
@@ -94,7 +99,6 @@ const explanation = ref<FormulaExplanation | null>(null)
 
 async function load(id: string, fromHistory: number | null): Promise<void> {
   if (!id) return
-  autoCollapsed.value = false
   paramsCollapsed.value = false
   excelCollapsed.value = true
   thinking.value = ''
@@ -173,16 +177,8 @@ onBeforeUnmount(() => {
 
 // ---------------------------------------------------------------- 交互
 
-/** 首次求值成功 → 自动收起参数区 */
-watch(
-  () => store.evalStatus,
-  (s) => {
-    if (s === 'success' && !autoCollapsed.value) {
-      autoCollapsed.value = true
-      paramsCollapsed.value = true
-    }
-  },
-)
+// 参数区**不做自动收起** —— 只由用户点标题行切换。
+// 详见文件头「参数区不做自动收起」。
 
 // ---------------------------------------------------------------- 历史自动记录
 

@@ -53,22 +53,27 @@ export const useFormulaStore = defineStore('formula', () => {
 
   // ---------------------------------------------------------------- 工作台占用标记
   //
-  // 🔴 这三个字段**故意不被 `reset()` 清掉**。
+  // 🔴 这几个字段**故意不被 `reset()` 清掉**。
   //
-  // 「公式计算」页不被 `keep-alive` 缓存，离开时 `reset()` 会把 `schema`
-  // 清空 —— 于是路由守卫再也没法回答「刚才那条公式叫什么、动过没有」。
-  // 而「从公式库/历史/收藏/新生成的公式跳进来会不会顶掉正在用的公式」
-  // 这个判断（需求 6）恰恰需要在**离开之后**才能做。
+  // 离开「公式计算」页时 `reset()` 会把 `schema` 清空 —— 于是路由守卫
+  // 再也没法回答「工作台里现在开着哪条公式」。而「从公式库/历史/收藏/
+  // 新生成的公式跳进来会不会顶掉正在用的公式」这个判断（需求 6）
+  // 恰恰要在**离开之后**才能做。
   //
-  // 所以把「最近一次打开过的公式」与「是否改过参数」单独留一份，
-  // 只服务于这个判断。
+  // 所以把「最近打开的是哪条公式的哪条历史」单独留一份，只服务于这个判断。
 
   /** 最近一次在「公式计算」里打开过的公式 id（空串 = 从没打开过） */
   const lastWorkspaceId = ref('')
   /** 对应名称（弹窗文案用） */
   const lastWorkspaceName = ref('')
-  /** 那次使用中是否改过参数（没改过就不打扰用户） */
-  const workspaceDirty = ref(false)
+  /**
+   * 最近打开的是那条公式的**哪条历史**（空串 = 不是从历史进来的）。
+   *
+   * ⚠️ 路由守卫必须连它一起比：同一条公式换一条历史，同样会**整份替换**
+   * 工作台内容（`FormulaView.load()` 会用那条快照重建参数）。
+   * 只比公式 id 会把这种切换当成「没换」，静默丢掉当前输入。
+   */
+  const lastWorkspaceHistoryId = ref('')
 
   // ---------------------------------------------------------------- 参数
 
@@ -287,10 +292,10 @@ export const useFormulaStore = defineStore('formula', () => {
       }
       paramValues.value = next
 
-      // 记下「正在用的是哪条」—— 供路由守卫判断是否会被顶掉（需求 6）
+      // 记下「正在用的是哪条公式的哪条历史」—— 供路由守卫判断是否会被顶掉（需求 6）
       lastWorkspaceId.value = s.id
       lastWorkspaceName.value = s.resultName || s.id
-      workspaceDirty.value = false
+      lastWorkspaceHistoryId.value = historyId == null ? '' : String(historyId)
 
       // 首次求值不防抖（用户刚进来，等 300ms 是白等）
       await triggerEvaluate()
@@ -311,7 +316,6 @@ export const useFormulaStore = defineStore('formula', () => {
    */
   function setParam(symbol: string, raw: string): void {
     paramValues.value = { ...paramValues.value, [symbol]: raw }
-    workspaceDirty.value = true
 
     if (paramErrors.value[symbol]) {
       const next = { ...paramErrors.value }
@@ -417,7 +421,7 @@ export const useFormulaStore = defineStore('formula', () => {
   /**
    * 重置全部状态（离开工作台时调）。
    *
-   * ⚠️ **不清** `lastWorkspaceId` / `lastWorkspaceName` / `workspaceDirty` ——
+   * ⚠️ **不清** `lastWorkspaceId` / `lastWorkspaceName` / `lastWorkspaceHistoryId` ——
    * 它们是路由守卫判断「会不会顶掉正在用的公式」的依据，
    * 必须在离开之后仍然可读。见上方字段注释。
    */
@@ -433,11 +437,11 @@ export const useFormulaStore = defineStore('formula', () => {
     loading.value = false
   }
 
-  /** 彻底忘掉工作台占用（「重置软件」后调） */
+  /** 彻底忘掉工作台占用（「重置软件」后、或当前公式已被删除时调） */
   function forgetWorkspace(): void {
     lastWorkspaceId.value = ''
     lastWorkspaceName.value = ''
-    workspaceDirty.value = false
+    lastWorkspaceHistoryId.value = ''
   }
 
   return {
@@ -449,7 +453,7 @@ export const useFormulaStore = defineStore('formula', () => {
     // 工作台占用标记（路由守卫用）
     lastWorkspaceId,
     lastWorkspaceName,
-    workspaceDirty,
+    lastWorkspaceHistoryId,
     forgetWorkspace,
     // 参数
     paramValues,

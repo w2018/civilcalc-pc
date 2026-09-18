@@ -2,8 +2,19 @@
 # =============================================================================
 #  bump-version.sh -- 版本号自增（三处一起改）
 #
-#  依据：项目约定「每次新增功能或修复 BUG，版本号自动 +1」
-#        起始版本 v1.0.0，之后 v1.0.1 / v1.0.2 / v1.0.3 …
+#  依据：项目约定「**每次发版进次版本，补丁位归零**」
+#        —— v1.0.10 的下一个版本是 **v1.1.0**，不是 v1.0.11。
+#
+#  ## 三段各管什么
+#
+#  | 段 | 含义 | 何时动 |
+#  |---|---|---|
+#  | 主版本 | 不兼容的大改版 | `--major` |
+#  | 次版本 | **每次发版都 +1**（默认行为） | 无参数 / `--minor` |
+#  | 补丁位 | 只给「必须单独打点补丁」的场合，**且只允许 0–9** | `--patch` |
+#
+#  ⚠️ **补丁位到 9 就进位**：`--patch` 在 `x.y.9` 上得到 `x.(y+1).0`。
+#     这样不会出现 `v1.0.10` 这种「补丁位两位数」的版本号。
 #
 #  ## 为什么必须是脚本
 #
@@ -14,11 +25,12 @@
 #
 #  ## 用法
 #
-#     ./scripts/bump-version.sh            # 补丁位 +1（最常用）
+#     ./scripts/bump-version.sh            # 次版本 +1，补丁归零（最常用）
+#     ./scripts/bump-version.sh --patch    # 补丁 +1（x.y.9 时进位成 x.(y+1).0）
+#     ./scripts/bump-version.sh --minor    # 同默认，语义更明确
+#     ./scripts/bump-version.sh --major    # 主版本 +1，其余归零
 #     ./scripts/bump-version.sh 1.2.0      # 显式指定版本
 #     ./scripts/bump-version.sh --show     # 只打印当前版本
-#     ./scripts/bump-version.sh --minor    # 次版本 +1，补丁归零
-#     ./scripts/bump-version.sh --major    # 主版本 +1，其余归零
 #
 #  ## 改完记得
 #
@@ -71,11 +83,17 @@ for part in "$MAJOR" "$MINOR" "$PATCH"; do
 done
 
 case "${1:-}" in
-  "")
-    NEW="$MAJOR.$MINOR.$((PATCH + 1))"
-    ;;
-  --minor)
+  ""|--minor)
+    # 默认：进次版本，补丁位归零（v1.0.10 → v1.1.0）
     NEW="$MAJOR.$((MINOR + 1)).0"
+    ;;
+  --patch)
+    # 补丁位只允许 0–9；到 9 就进位到次版本，避免 v1.0.10 这种两位补丁位
+    if [ "$PATCH" -ge 9 ]; then
+      NEW="$MAJOR.$((MINOR + 1)).0"
+    else
+      NEW="$MAJOR.$MINOR.$((PATCH + 1))"
+    fi
     ;;
   --major)
     NEW="$((MAJOR + 1)).0.0"

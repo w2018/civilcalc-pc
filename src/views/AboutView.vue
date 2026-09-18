@@ -136,12 +136,6 @@ const paths = () =>
         <el-button :loading="checking" @click="checkUpdate()">检查更新</el-button>
       </div>
 
-      <!-- 作者信息（复用「运行信息」的键值样式，保持同一套排布） -->
-      <div class="author">
-        <span class="kv__key">作者</span>
-        <span class="kv__val author__name">曾先生</span>
-      </div>
-
       <!-- 更新结果 -->
       <div v-if="update" class="upd">
         <!-- ① 没查成 —— 绝不能显示成「已是最新」 -->
@@ -184,6 +178,12 @@ const paths = () =>
           <p class="upd__title">已是最新（v{{ update.currentVersion }}）</p>
           <p class="upd__meta">已连上 GitHub 并比对过，当前就是最新版本。</p>
         </template>
+      </div>
+
+      <!-- 作者信息 —— 放在「版本」卡片最底部（更新结果之后） -->
+      <div class="author">
+        <span class="kv__key">作者</span>
+        <span class="kv__val author__name">曾先生</span>
       </div>
     </section>
 

@@ -84,18 +84,25 @@ const router = createRouter({
  *
  * ## 为什么需要 store 里的「占用标记」
  *
- * 「公式计算」页**不被 `keep-alive` 缓存**（它的数据在全局单例 store 里，
- * 缓存多实例会互相覆盖）。所以用户从工作台切到公式库的那一刻，
- * `store.schema` 已经被 `reset()` 清空了 —— 守卫再读它永远是 `null`。
- *
- * 因此判断依据是 `lastWorkspaceId` / `workspaceDirty` 这两个
+ * 离开「公式计算」页时 `store.schema` 已经被 `reset()` 清空了 ——
+ * 守卫再读它永远是 `null`。所以判断依据是 `lastWorkspaceId` /
+ * `lastWorkspaceName` / `lastWorkspaceHistoryId` 这几个
  * **刻意不被 `reset()` 清掉**的标记（见 `stores/formula.ts`）。
  *
- * ## 只在「真的动过参数」时才问
+ * ## 🔴 任何切换都要问（不再看「改没改过参数」）
  *
- * 用户打开一条公式、只是看了一眼就去点另一条 —— 没有任何东西会丢
- * （参数草稿本来就按公式分别持久化），这时弹窗纯属打扰。
- * 所以加一条 `workspaceDirty`：改过参数才问。
+ * 曾经只在「改过参数」（`workspaceDirty`）时才问，理由是「只是看了一眼
+ * 就换、没有东西会丢」。实测这个判断不可靠：换公式会把工作台内容
+ * **整个换掉**，而「有没有东西会丢」在守卫这一层根本判断不准
+ * （参数区可能只是被点开看了一眼、也可能是只改了没提交的草稿）。
+ *
+ * 用户明确要求「任何切换都要问」，所以现在只看**换没换**。
+ *
+ * ## 同一条公式的另一条历史也算「切换」
+ *
+ * 历史记录会带 `historyId` 查询参数回到那条快照。只比公式 id 会把
+ * 「同一条公式换历史」当成没换 —— 而它同样会用快照整份重建参数，
+ * 静默丢掉当前输入。所以这里连 `historyId` 一起比。
  *
  * 文案里如实说明「草稿会保留」——不编「不保存就丢失」的假警告。
  */
@@ -118,14 +125,17 @@ router.beforeEach(async (to) => {
   }
 
   const currentId = store.lastWorkspaceId
-  // 从没打开过公式 / 就是同一条 / 没动过参数 → 放行
-  if (!currentId || currentId === nextId) return true
-  if (!store.workspaceDirty) return true
+  // 从没打开过公式 → 放行
+  if (!currentId) return true
+
+  // 同一条公式的**同一条历史**才算「没换」；换了历史同样会替换工作台内容
+  const nextHistoryId = String(to.query.historyId ?? '')
+  if (currentId === nextId && store.lastWorkspaceHistoryId === nextHistoryId) return true
 
   try {
     await ElMessageBox.confirm(
-      `「${store.lastWorkspaceName}」里已经填过参数。` +
-        `打开另一条公式会离开当前这次计算（参数草稿会保留，下次打开还在）。`,
+      `工作台里正开着「${store.lastWorkspaceName || currentId}」。` +
+        `切过去会离开这次计算（参数草稿会保留，下次打开还在）。`,
       '要切换公式吗？',
       { confirmButtonText: '切换', cancelButtonText: '留在这条', type: 'warning' },
     )
