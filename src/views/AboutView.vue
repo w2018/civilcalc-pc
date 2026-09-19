@@ -124,18 +124,18 @@ const paths = () =>
   <div class="view">
     <!-- ① 版本 -->
     <section class="panel">
-      <div class="panel__body head">
-        <AppLogo class="head__icon" :size="56" />
-        <div class="head__main">
-          <h2 class="head__name">{{ info?.productName || 'AI全能计算器' }}</h2>
-          <p class="head__ver">
+      <div class="panel__body about-head">
+        <AppLogo class="about-head__icon" :size="56" />
+        <div class="about-head__main">
+          <h2 class="about-head__name">{{ info?.productName || 'AI全能计算器' }}</h2>
+          <p class="about-head__ver">
             版本 {{ info?.version || '—' }}
-            <span v-if="info" class="head__schema">（数据库 schema v{{ info.dbSchemaVersion }}）</span>
+            <span v-if="info" class="about-head__schema">（数据库 schema v{{ info.dbSchemaVersion }}）</span>
           </p>
           <!-- 作者紧跟在版本下面、与版本**左对齐** ——
                以前它是卡片底部一个独立的「左标签 + 右值」行，
                标签贴在最左边、与上面这组信息完全对不上，看起来不像一组。 -->
-          <p class="head__author">作者 曾先生</p>
+          <p class="about-head__author">作者 曾先生</p>
         </div>
         <el-button :loading="checking" @click="checkUpdate()">检查更新</el-button>
       </div>
@@ -270,8 +270,23 @@ const paths = () =>
   padding: var(--sp-3) var(--sp-4) var(--sp-4);
 }
 
-/* 版本头 */
-.head {
+/*
+ * 版本头。
+ *
+ * 🔴 **块名不能叫 `.head`。**
+ *
+ * `styles/global.scss` 里有一条全局规则：开背景图时给 `.head` 等元素加半透明底
+ * 与框线 —— 那条是为 **`FormulaHeader`（公式页顶部的卡片）** 写的，它本身就
+ * 是一张卡片。
+ *
+ * 本文件原来用的是 `class="panel__body head"`，于是**撞上了同一个类名**：
+ * 这个 div 只是面板里的一行（无底色、无圆角），却被当成卡片又加了一层框 ——
+ * 面板内部多出一圈**直角边框**，看起来像渲染错误。
+ *
+ * 改名成 `about-head` 后不再命中那条全局规则。（同类问题见 `global.scss` 里
+ * `.exp` 的说明：**判据是「它本来是不是一张卡片」，不是「它在不在 `.panel` 里」**。）
+ */
+.about-head {
   display: flex;
   align-items: center;
   gap: var(--sp-4);
@@ -279,37 +294,37 @@ const paths = () =>
 }
 
 /* 尺寸由 `size` 属性给（内联 SVG）；图形自带圆角，这里不再裁一次 */
-.head__icon {
+.about-head__icon {
   flex-shrink: 0;
 }
 
-.head__main {
+.about-head__main {
   flex: 1;
   min-width: 0;
 }
 
 /* 作者行：复用 `.kv__key` / `.kv__val` 的排版，只补一条与卡片内边距对齐的间距 */
 /* 作者：与「版本」同一组、同字号同色 —— 它是元信息，不做强调 */
-.head__author {
+.about-head__author {
   margin: var(--sp-1) 0 0;
   color: var(--c-text-3);
   font-size: var(--f-size-sm);
 }
 
-.head__name {
+.about-head__name {
   margin: 0;
   color: var(--c-text);
   font-size: var(--f-size-xl);
   font-weight: 600;
 }
 
-.head__ver {
+.about-head__ver {
   margin: var(--sp-1) 0 0;
   color: var(--c-text-3);
   font-size: var(--f-size-sm);
 }
 
-.head__schema {
+.about-head__schema {
   color: var(--c-text-3);
 }
 
