@@ -704,9 +704,20 @@ async function onResetDone(): Promise<void> {
 
 .panel__head {
   display: flex;
-  align-items: baseline;
+  /*
+   * 🔴 上下内边距**必须对称**，而且 `align-items` 要用 `center`。
+   *
+   * 这里原本是 `padding: var(--sp-4) var(--sp-4) 0`（底部 0）+ `align-items: baseline`：
+   * 那套是给「下面紧跟着正文」的静态标题设计的，底部不留白正好。
+   * 但设置页这 6 个分块**全部可折叠** —— 收起之后标题下面什么都没有，
+   * 那 0 的底部内边距就让文字**贴到了底边**，看起来像没对齐。
+   *
+   * 与 `FormulaView` 的折叠栏（「Excel 公式」那种）保持同一套：
+   * 四边 `var(--sp-4)` + 垂直居中。
+   */
+  align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-4) var(--sp-4) 0;
+  padding: var(--sp-4);
   /*
    * ⚠️ 这里**不要**用 `justify-content: space-between`。
    *
