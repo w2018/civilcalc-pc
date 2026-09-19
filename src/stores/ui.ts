@@ -124,7 +124,7 @@ export const useUiStore = defineStore('ui', () => {
     try {
       const bg = await appearanceApi.backgroundGet()
       hasBackground.value = bg.hasBackground
-      backgroundUrl.value = bg.imagePath ? assetSrc(bg.imagePath) : null
+      backgroundUrl.value = bg.imagePath ? assetSrc(bg.imagePath, true) : null
       setBackgroundUrl(backgroundUrl.value)
     } catch (e) {
       console.warn('[ui] 读背景失败，保持默认', e)
@@ -226,12 +226,24 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
 
-  /** 重新读一次背景（设置页改完背景图后调用） */
+  /**
+   * 重新读一次背景（设置页改完背景图后调用）。
+   *
+   * ## 🔴 为什么 URL 必须带缓存击穿参数（`assetSrc(..., true)`）
+   *
+   * 背景图落盘的文件名是**固定**的 —— 后端 `background_save` 做的是
+   * `std::fs::copy(src, <app_data_dir>/background.jpg)`（见 `paths.rs::background_path`）。
+   * 于是**换图之后 URL 一模一样**，WebView 直接命中缓存、继续显示旧图 ——
+   * 表现就是「换了背景图不生效，要重启应用才行」（重启会换一个 URL）。
+   *
+   * 加个每次都不同的 `?v=` 让 WebView 重新取图即可。
+   * ⚠️ 不要改成「换一个文件名」来绕 —— 那样每换一次就留一张旧图没人清理。
+   */
   async function refreshBackground(): Promise<void> {
     try {
       const bg = await appearanceApi.backgroundGet()
       hasBackground.value = bg.hasBackground
-      backgroundUrl.value = bg.imagePath ? assetSrc(bg.imagePath) : null
+      backgroundUrl.value = bg.imagePath ? assetSrc(bg.imagePath, true) : null
       setBackgroundUrl(backgroundUrl.value)
     } catch (e) {
       console.warn('[ui] 刷新背景失败', e)

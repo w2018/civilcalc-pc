@@ -26,9 +26,14 @@ import { readTextFile as fsReadTextFile, writeFile, writeTextFile } from '@tauri
  * 绝对路径 → `asset:` URL。
  *
  * @param absolutePath 本机绝对路径（Windows 形如 `D:\...\background.jpg`）
+ * @param cacheBust 追加一个每次都不同的查询参数，**绕开 WebView 缓存**。
+ *   文件路径固定不变的资源必须开 —— 背景图就是（见 `stores/ui.ts` 的说明）。
  */
-export function assetSrc(absolutePath: string): string {
-  return convertFileSrc(absolutePath)
+export function assetSrc(absolutePath: string, cacheBust = false): string {
+  const url = convertFileSrc(absolutePath)
+  // ⚠️ 加查询串是安全的：Tauri 的 asset 协议处理器取的是 `request.uri().path()`
+  //    （不含 query），所以 `?v=` 不会让它找不到文件，但 WebView 会当成新 URL。
+  return cacheBust ? `${url}?v=${Date.now()}` : url
 }
 
 /**
