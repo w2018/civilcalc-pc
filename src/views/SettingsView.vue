@@ -76,8 +76,55 @@ const editing = ref<LlmProfile | null>(null)
 const creating = ref(false)
 const editingHasKey = ref(false)
 
-/** 「AI 行为」区块是否折叠（默认折叠：提示词很长，展开会把整页撑得很难翻） */
-const aiCollapsed = ref(true)
+// ---------------------------------------------------------------- 分块折叠
+
+/**
+ * 设置页各分块的折叠状态（`true` = 收起）。
+ *
+ * ## 默认**全部收起**
+ *
+ * 六个分块内容都很长，全展开要滚很久才能翻到想改的那一项。
+ * 默认收起 → 一屏看全目录，点哪块展哪块。
+ *
+ * ## 为什么放 localStorage 而不是偏好文件
+ *
+ * 与侧栏折叠同理（见 `stores/ui.ts`）：这是**纯 UI 临时状态**，
+ * 不是用户可见的「设置」。进偏好会牵动「重置外观」等区块语义，
+ * 而且每折一次都写一次盘没必要。
+ *
+ * ⚠️ 因此「重置软件」**不会**把它清回默认 —— 它本来就不在偏好里。
+ */
+const COLLAPSE_KEY = 'civilcalc.ui.settingsCollapsed'
+
+/** 分块 key → 是否收起。**只存「用户改过的」**，没记录的按收起算 */
+const collapsed = ref<Record<string, boolean>>(readCollapsed())
+
+function readCollapsed(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(COLLAPSE_KEY)
+    if (!raw) return {}
+    const parsed: unknown = JSON.parse(raw)
+    // 脏数据（被人手改过 / 旧版本格式）一律忽略，回落到「全部收起」
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, boolean>) : {}
+  } catch {
+    // 隐私模式 / 存储被禁：静默回落，不影响启动
+    return {}
+  }
+}
+
+/** 某个分块是否收起（**没记录过 = 收起**，这样新增分块天然是默认收起的） */
+function isCollapsed(key: string): boolean {
+  return collapsed.value[key] !== false
+}
+
+function toggleSection(key: string): void {
+  collapsed.value = { ...collapsed.value, [key]: !isCollapsed(key) }
+  try {
+    localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsed.value))
+  } catch {
+    // 写不进去也不该报错
+  }
+}
 
 onMounted(load)
 
@@ -472,11 +519,17 @@ async function onResetDone(): Promise<void> {
     <template v-else>
       <!-- ① 模型与密钥 -->
       <section class="panel">
-        <div class="panel__head">
+        <button
+          class="panel__head panel__head--toggle"
+          type="button"
+          :aria-expanded="!isCollapsed('llm')"
+          @click="toggleSection('llm')"
+        >
+          <span class="panel__caret" aria-hidden="true">{{ isCollapsed('llm') ? '▸' : '▾' }}</span>
           <span class="panel__title">模型与密钥</span>
           <span class="panel__hint">密钥只进系统凭据管理器，不随配置导出</span>
-        </div>
-        <div class="panel__body">
+        </button>
+        <div v-show="!isCollapsed('llm')" class="panel__body">
           <p v-if="config.profiles.length === 0" class="empty">
             还没有模型档位。添加一个并填入 API Key 后就能使用 AI 解析。
           </p>
@@ -498,19 +551,19 @@ async function onResetDone(): Promise<void> {
         </div>
       </section>
 
-      <!-- ② AI 行为（默认折叠：提示词很长，展开会把整页撑得很难翻） -->
+      <!-- ② AI 行为 -->
       <section class="panel">
         <button
           class="panel__head panel__head--toggle"
           type="button"
-          :aria-expanded="!aiCollapsed"
-          @click="aiCollapsed = !aiCollapsed"
+          :aria-expanded="!isCollapsed('ai')"
+          @click="toggleSection('ai')"
         >
-          <span class="panel__caret" aria-hidden="true">{{ aiCollapsed ? '▸' : '▾' }}</span>
+          <span class="panel__caret" aria-hidden="true">{{ isCollapsed('ai') ? '▸' : '▾' }}</span>
           <span class="panel__title">AI 行为</span>
           <span class="panel__hint">解析提示词 / 默认提醒词 / 是否生成详解</span>
         </button>
-        <div v-show="!aiCollapsed" class="panel__body">
+        <div v-show="!isCollapsed('ai')" class="panel__body">
           <PromptEditor
             :prompt-a="promptA"
             :default-reminder="defaultReminder"
@@ -525,33 +578,51 @@ async function onResetDone(): Promise<void> {
 
       <!-- ③ 外观 -->
       <section class="panel">
-        <div class="panel__head">
+        <button
+          class="panel__head panel__head--toggle"
+          type="button"
+          :aria-expanded="!isCollapsed('appearance')"
+          @click="toggleSection('appearance')"
+        >
+          <span class="panel__caret" aria-hidden="true">{{ isCollapsed('appearance') ? '▸' : '▾' }}</span>
           <span class="panel__title">外观</span>
-        </div>
-        <div class="panel__body">
+        </button>
+        <div v-show="!isCollapsed('appearance')" class="panel__body">
           <AppearancePanel />
         </div>
       </section>
 
       <!-- ④ 导出选项 -->
       <section class="panel">
-        <div class="panel__head">
+        <button
+          class="panel__head panel__head--toggle"
+          type="button"
+          :aria-expanded="!isCollapsed('export')"
+          @click="toggleSection('export')"
+        >
+          <span class="panel__caret" aria-hidden="true">{{ isCollapsed('export') ? '▸' : '▾' }}</span>
           <span class="panel__title">计算书导出选项</span>
           <span class="panel__hint">导出时也会记住你在对话框里的临时选择</span>
-        </div>
-        <div class="panel__body">
+        </button>
+        <div v-show="!isCollapsed('export')" class="panel__body">
           <ExportOptionsForm :options="exportOptions" @update="onExportOptions" />
         </div>
       </section>
 
       <!-- ⑤ 配置迁移 -->
       <section class="panel">
-        <div class="panel__head">
+        <button
+          class="panel__head panel__head--toggle"
+          type="button"
+          :aria-expanded="!isCollapsed('migrate')"
+          @click="toggleSection('migrate')"
+        >
+          <span class="panel__caret" aria-hidden="true">{{ isCollapsed('migrate') ? '▸' : '▾' }}</span>
           <span class="panel__title">配置迁移</span>
-        </div>
-        <div class="panel__body">
+        </button>
+        <div v-show="!isCollapsed('migrate')" class="panel__body">
           <p class="hint">
-            导出/导入模型档位与密钥，用于换机或重装。导入时包里缺密钥就**不动本机密钥**。
+            导出/导入模型档位与密钥，用于换机或重装。导入时包里缺密钥就不动本机密钥。
           </p>
           <div class="migrate">
             <el-button :loading="migrating" @click="exportConfig()">导出配置</el-button>
@@ -563,10 +634,16 @@ async function onResetDone(): Promise<void> {
 
       <!-- ⑥ 重置 -->
       <section class="panel panel--danger">
-        <div class="panel__head">
+        <button
+          class="panel__head panel__head--toggle"
+          type="button"
+          :aria-expanded="!isCollapsed('reset')"
+          @click="toggleSection('reset')"
+        >
+          <span class="panel__caret" aria-hidden="true">{{ isCollapsed('reset') ? '▸' : '▾' }}</span>
           <span class="panel__title">重置软件</span>
-        </div>
-        <div class="panel__body">
+        </button>
+        <div v-show="!isCollapsed('reset')" class="panel__body">
           <ResetPanel @done="onResetDone" />
         </div>
       </section>
