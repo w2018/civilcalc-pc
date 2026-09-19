@@ -235,31 +235,9 @@ const contractWarning = computed(() =>
   gap: var(--sp-1);
 }
 
-/**
- * 「结果区默认提醒词」的输入框：**完整边框**（需求 2）。
- *
- * 全局样式把 `el-input` 改成了「只有底线」，这里要覆盖回一个明显的方框。
- * ⚠️ 全局那条写了 `box-shadow: none !important`，所以这里的 `box-shadow`
- * 也必须带 `!important` 才压得住（`!important` 优先于选择器权重）。
- */
-.reminder-box :deep(.el-input__wrapper) {
-  padding: 0 var(--sp-3);
-  border: var(--hairline) solid var(--c-divider);
-  border-radius: var(--r-btn);
-  background: var(--c-surface);
-  box-shadow: none !important;
-}
-
-.reminder-box :deep(.el-input__wrapper:hover) {
-  border-color: var(--c-text-3);
-}
-
-.reminder-box :deep(.el-input__wrapper.is-focus) {
-  border-color: var(--c-primary);
-  border-width: 1px;
-  /* 用一圈主色淡光代替加粗边框：加粗会让输入框在聚焦时跳一下 */
-  box-shadow: 0 0 0 3px var(--c-primary-light) !important;
-}
+/* 「结果区默认提醒词」那个输入框曾经在这里单独覆盖成完整边框 ——
+ * 现在全局 `el-input` 本身就是四边框了（见 `styles/element-override.scss`），
+ * 这段重复样式已删除，避免两处各写一遍、以后改一处漏一处。 */
 
 .field__label {
   display: flex;

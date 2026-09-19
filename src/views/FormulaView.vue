@@ -50,6 +50,7 @@ import RefineDialog from '@/components/llm/RefineDialog.vue'
 import { useFormulaStore } from '@/stores/formula'
 import { useThinkingStore } from '@/stores/thinking'
 import { useHotkeys } from '@/composables/useHotkeys'
+import { notifySaved } from '@/utils/toast'
 import { errorMessage } from '@/types/error'
 import type { FormulaExplanation } from '@/types/domain'
 
@@ -373,6 +374,21 @@ useHotkeys(
   () => store.schema !== null,
 )
 
+/**
+ * 改公式名（头部 🖊 提交后触发）。
+ *
+ * 落库交给 store —— 它会同时把 `lastWorkspaceName` 同步掉，
+ * 否则路由守卫那个「要切换公式吗？」弹窗还会显示旧名字。
+ */
+async function onRename(name: string): Promise<void> {
+  try {
+    await store.renameFormula(name)
+    notifySaved('已重命名')
+  } catch (err) {
+    ElMessage.error(errorMessage(err as never))
+  }
+}
+
 /** `Ctrl+S`：保存公式（含把参数草稿落盘） */
 async function saveFormula(): Promise<void> {
   if (!store.schema) return
@@ -421,6 +437,7 @@ async function saveFormula(): Promise<void> {
         :favorite="favorite"
         @toggle-favorite="toggleFavorite()"
         @open-versions="router.push({ name: 'versions', params: { id: formulaId } })"
+        @rename="onRename"
       />
 
       <div class="view__actions">

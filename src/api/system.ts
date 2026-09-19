@@ -45,3 +45,33 @@ export function configSave(snapshot: ConfigSnapshot): Promise<void> {
 export function configResetSection(section: ConfigSection): Promise<number> {
   return invoke<number>('config_reset_section', { section })
 }
+
+// =============================================================================
+// 首次运行的「用户协议」
+// =============================================================================
+
+/**
+ * 用户是否已同意用户协议。
+ *
+ * `false` → 界面要弹**不可关闭**的协议弹窗（见 `components/common/EulaDialog.vue`）。
+ * 同意状态存在后端偏好里（键 `eula_accepted`），
+ * ⚠️ 它**刻意不属于任何区块**，所以「重置软件」不会把它清掉。
+ */
+export function eulaStatus(): Promise<boolean> {
+  return invoke<boolean>('eula_status')
+}
+
+/** 记下「用户已同意用户协议」 */
+export function eulaAccept(): Promise<void> {
+  return invoke<void>('eula_accept')
+}
+
+/**
+ * 退出应用（协议弹窗里点「不同意」时用）。
+ *
+ * ⚠️ **不会返回** —— 后端延迟一小会儿就把进程结束了。
+ * 所以调用方不要 `await` 之后再做别的事（也不该 catch 超时）。
+ */
+export function appExit(): Promise<void> {
+  return invoke<void>('app_exit')
+}

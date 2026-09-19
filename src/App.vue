@@ -44,6 +44,7 @@ import { onMounted } from 'vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import SideNav from '@/components/layout/SideNav.vue'
 import TopBar from '@/components/layout/TopBar.vue'
+import EulaDialog from '@/components/common/EulaDialog.vue'
 import { useUiStore } from '@/stores/ui'
 
 const ui = useUiStore()
@@ -79,6 +80,9 @@ onMounted(() => {
         </RouterView>
       </main>
     </div>
+
+    <!-- 首次运行的用户协议：不可关闭，同意才继续、不同意直接退出 -->
+    <EulaDialog />
   </div>
 </template>
 

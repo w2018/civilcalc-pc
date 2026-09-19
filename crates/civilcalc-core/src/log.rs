@@ -212,10 +212,25 @@ mod tests {
     /// （用 `TEST_LOCK` 保证；否则并行测试会互相覆盖 sink）。
     static TEST_LOCK: Mutex<()> = Mutex::new(());
 
+    /// 装一个「收集本线程日志」的 sink。
+    ///
+    /// 🔴 **必须按线程过滤**：`SINK` 是**进程级全局**的，`install()` 会把
+    /// 它整体换掉 —— 而同一个 crate 里其它测试（内置库播种、检索索引等）
+    /// 并行跑的时候也在写日志，那些行同样会进到这个收集器里，
+    /// 于是 `assert_eq!(lines.len(), 4)` 这类断言会**随机失败**
+    /// （实测在 `cargo test --workspace` 下撞到过；单独跑这个模块则必过）。
+    ///
+    /// `TEST_LOCK` 只能串行化「本模块内的几个测试」，管不到别的测试写日志，
+    /// 所以按线程过滤才是根治。
     fn install_collector() -> Arc<Mutex<Vec<String>>> {
         let collected: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let c = collected.clone();
+        let me = std::thread::current().id();
         install(Box::new(move |level, tag, message, error| {
+            // 不是本线程写的 → 与本用例无关，丢掉
+            if std::thread::current().id() != me {
+                return;
+            }
             if let Ok(mut g) = c.lock() {
                 g.push(format_line(level, tag, message, error));
             }

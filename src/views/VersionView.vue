@@ -16,6 +16,7 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { formulaList } from '@/api/formula'
 import {
   versionCreate,
   versionDiff,
@@ -70,6 +71,111 @@ const changeTypeLabel: Record<string, string> = {
   revert: '回退',
 }
 
+// =============================================================================
+// 微调谱系（`revisedFrom`）
+// =============================================================================
+
+/**
+ * ## 🔴 为什么谱系要单独算，而不是从 `version_list` 里拿
+ *
+ * AI 续写/微调产生的是**一条新公式**（`normalizer` 生成新的 `usr:<uuid>`，
+ * 并把 `revisedFrom` 指向父公式），**不是同一条公式的版本快照** ——
+ * 微调链路上从来不会调 `version_create`。
+ *
+ * 所以微调出来的公式在版本页里 `versions.length === 0`，页面只会说
+ * 「暂无版本记录」，两条公式之间的关系完全看不见 —— 这就是
+ * 「微调后的版本功能无效、没有关系链」的真正原因。
+ *
+ * 后端目前**没有任何命令按 `revisedFrom` 聚合**（这个字段只有写入方，
+ * 没有读取方）。而 `formula_list()` 本来就返回全部 `FormulaSchema`
+ * （含 `revisedFrom`），公式量级又是个人应用级别，所以直接在前端拼这棵树。
+ *
+ * ## 算法
+ *
+ * 1. 从当前公式沿 `revisedFrom` 一路向上找到**根**（最早的祖先）；
+ * 2. 从根按 `revisedFrom` 做一次 DFS，得到整棵谱系（含分叉）；
+ * 3. 输出「根 → 叶」顺序，带 `depth` 用于缩进。
+ *
+ * ⚠️ 用 `visited` 兜住成环：`revisedFrom` 正常是树，但脏数据可能指回自己。
+ */
+interface LineageNode {
+  id: string
+  name: string
+  createdAt: number
+  /** 距根的层级（根 = 0），用于缩进 */
+  depth: number
+  /** 是不是当前正在看的这条 */
+  current: boolean
+}
+
+const lineage = ref<LineageNode[]>([])
+
+/** 纯函数：从全部公式里解出 `currentId` 所在的那棵谱系 */
+function buildLineage(all: FormulaSchema[], currentId: string): LineageNode[] {
+  const byId = new Map(all.map((s) => [s.id, s]))
+  const cur = byId.get(currentId)
+  if (!cur) return []
+
+  // ① 向上找根
+  const seen = new Set<string>()
+  let root = cur
+  while (root.revisedFrom && !seen.has(root.id)) {
+    seen.add(root.id)
+    const parent = byId.get(root.revisedFrom)
+    if (!parent) break
+    root = parent
+  }
+
+  // ② 子表（按创建时间排序，保证同一层里顺序稳定）
+  const children = new Map<string, FormulaSchema[]>()
+  for (const s of all) {
+    if (!s.revisedFrom) continue
+    const list = children.get(s.revisedFrom) ?? []
+    list.push(s)
+    children.set(s.revisedFrom, list)
+  }
+  for (const list of children.values()) list.sort((a, b) => a.createdAt - b.createdAt)
+
+  // ③ DFS
+  const out: LineageNode[] = []
+  const visited = new Set<string>()
+  const walk = (node: FormulaSchema, depth: number): void => {
+    if (visited.has(node.id)) return
+    visited.add(node.id)
+    out.push({
+      id: node.id,
+      name: node.resultName || '未命名公式',
+      createdAt: node.createdAt,
+      depth,
+      current: node.id === currentId,
+    })
+    for (const c of children.get(node.id) ?? []) walk(c, depth + 1)
+  }
+  walk(root, 0)
+  return out
+}
+
+/**
+ * 取谱系。
+ *
+ * 单独失败、单独静默 —— 它只是辅助信息，读不到不该影响版本页的主功能。
+ */
+async function loadLineage(): Promise<void> {
+  if (!formulaId.value) return
+  try {
+    const all = await formulaList()
+    lineage.value = buildLineage(all, formulaId.value)
+  } catch (e) {
+    console.warn('[VersionView] 读微调谱系失败', e)
+    lineage.value = []
+  }
+}
+
+/** 跳到谱系里的另一条公式 */
+function openFormula(id: string): void {
+  router.push({ name: 'formula', params: { id } })
+}
+
 async function load() {
   if (!formulaId.value) return
   loading.value = true
@@ -94,6 +200,9 @@ async function load() {
   } finally {
     loading.value = false
   }
+
+  // 谱系是另一套数据（`revisedFrom`，不是版本快照）—— 单独取、单独失败
+  void loadLineage()
 }
 
 async function runDiff() {
@@ -191,7 +300,40 @@ onMounted(() => {
 
     <p v-if="loadError" class="view__err">{{ loadError }}</p>
     <p v-else-if="loading" class="view__hint">加载中…</p>
-    <p v-else-if="versions.length === 0" class="view__hint">暂无版本记录</p>
+
+    <!-- 微调谱系：独立于版本快照渲染 ——
+         微调出来的公式本身没有版本快照，挂在 `v-else` 里就永远看不见 -->
+    <div v-if="lineage.length > 1" class="lin">
+      <div class="lin__head">
+        <span class="lin__title">微调谱系</span>
+        <span class="lin__hint">
+          AI 续写 / 微调产生的是新公式，靠这条链串起来（不是版本快照）
+        </span>
+      </div>
+      <ol class="lin__list">
+        <li
+          v-for="n in lineage"
+          :key="n.id"
+          class="lin__item"
+          :style="{ paddingLeft: `calc(${n.depth} * var(--sp-5))` }"
+        >
+          <button
+            class="lin__node"
+            type="button"
+            :class="{ 'lin__node--current': n.current }"
+            :disabled="n.current"
+            :title="n.current ? '当前正在看的公式' : '打开这条公式'"
+            @click="openFormula(n.id)"
+          >
+            <span class="lin__name">{{ n.name }}</span>
+            <span v-if="n.current" class="lin__badge">当前</span>
+            <span class="lin__time">{{ fmtTime(n.createdAt) }}</span>
+          </button>
+        </li>
+      </ol>
+    </div>
+
+    <p v-if="versions.length === 0" class="view__hint">暂无版本快照</p>
 
     <div v-else class="vv">
       <!-- 版本链 -->
@@ -323,6 +465,85 @@ onMounted(() => {
 .view__err {
   color: var(--c-danger, #e54545);
 }
+
+/* ---- 微调谱系 ---- */
+.lin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-card);
+  background: var(--c-surface-2);
+}
+.lin__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.lin__title {
+  font-size: var(--f-size-sm);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.lin__hint {
+  font-size: var(--f-size-xs);
+  color: var(--c-text-3);
+}
+.lin__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+/* 缩进由内联 style 按 depth 给（见模板） */
+.lin__node {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  max-width: 100%;
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--hairline) solid var(--c-divider);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: var(--f-size-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.lin__node:hover:not(:disabled) {
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+}
+.lin__node--current {
+  border-color: var(--c-primary);
+  background: var(--c-primary-light);
+  color: var(--c-primary);
+  cursor: default;
+  /* 浏览器会给 disabled 按钮压一层灰，这里显式压回来 */
+  opacity: 1;
+}
+.lin__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lin__badge {
+  flex-shrink: 0;
+  padding: 0 var(--sp-1);
+  border-radius: var(--r-sm);
+  background: var(--c-primary);
+  color: #fff;
+  font-size: var(--f-size-xs);
+}
+.lin__time {
+  flex-shrink: 0;
+  color: var(--c-text-3);
+  font-size: var(--f-size-xs);
+}
+
 .vv {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

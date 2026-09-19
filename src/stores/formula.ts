@@ -413,6 +413,24 @@ export const useFormulaStore = defineStore('formula', () => {
     await formulaApi.formulaSave(s)
   }
 
+  /**
+   * 改公式名并落库。
+   *
+   * ⚠️ **必须同步 `lastWorkspaceName`** —— 路由守卫弹「要切换公式吗？」时
+   * 用的就是它（见上方占用标记），不同步的话改完名弹窗还显示旧名字。
+   *
+   * 空名 / 与原名相同 → 直接返回，不写库（避免一次无意义的 upsert + 索引重建）。
+   */
+  async function renameFormula(name: string): Promise<void> {
+    const s = schema.value
+    if (!s) return
+    const next = name.trim()
+    if (!next || next === s.resultName) return
+    s.resultName = next
+    lastWorkspaceName.value = next
+    await save()
+  }
+
   /** 用新的 schema 替换当前公式（编辑表达式后） */
   function replaceSchema(next: FormulaSchema): void {
     schema.value = next
@@ -455,6 +473,7 @@ export const useFormulaStore = defineStore('formula', () => {
     lastWorkspaceName,
     lastWorkspaceHistoryId,
     forgetWorkspace,
+    renameFormula,
     // 参数
     paramValues,
     paramEvaluated,

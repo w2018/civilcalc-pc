@@ -87,6 +87,11 @@ pub const KEY_EXPORT_OPTIONS: &str = "export_options";
 pub const KEY_WEBDAV_LAST_BACKUP: &str = "webdav_last_backup_at";
 /// 累计 WebDAV 备份次数——**不进备份**
 pub const KEY_WEBDAV_BACKUP_COUNT: &str = "webdav_backup_count";
+/// 用户是否已同意「用户协议」（首次运行时弹窗）
+///
+/// ⚠️ **刻意不属于任何 [`ConfigSection`]** —— 它不该被「重置软件」
+/// 按区块清掉（清了会让人下次启动又被弹一次，像出 bug）。
+pub const KEY_EULA_ACCEPTED: &str = "eula_accepted";
 
 /// 不进备份包的键（源项目 `NON_BACKUP_KEYS`，逐字对齐）
 pub const NON_BACKUP_KEYS: &[&str] = &[KEY_WEBDAV_LAST_BACKUP, KEY_WEBDAV_BACKUP_COUNT];
@@ -420,6 +425,15 @@ impl AppConfig {
         } else {
             self.remove(KEY_BACKGROUND);
         }
+    }
+
+    /// 是否已同意「用户协议」（首次运行弹窗用）
+    pub fn eula_accepted(&self) -> bool {
+        self.get_bool(KEY_EULA_ACCEPTED)
+    }
+
+    pub fn set_eula_accepted(&mut self, yes: bool) {
+        self.set_bool(KEY_EULA_ACCEPTED, yes);
     }
 
     /// 文字颜色：`AUTO` 或具体色值

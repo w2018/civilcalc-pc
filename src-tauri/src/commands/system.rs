@@ -1,4 +1,4 @@
-//! 组 1：系统与配置（5 个命令）。
+//! 组 1：系统与配置（8 个命令）。
 //!
 //! | 命令 | 入参 | 返回 |
 //! |---|---|---|
@@ -7,6 +7,10 @@
 //! | `config_get` | — | [`ConfigSnapshot`] |
 //! | `config_save` | `snapshot` | `void` |
 //! | `config_reset_section` | `section: String` | `number`（删除的键数） |
+//! | `compile_cache_stats` / `compile_cache_clear` | — | 编译缓存 |
+//! | `eula_status` | — | `boolean`（是否已同意用户协议） |
+//! | `eula_accept` | — | `void` |
+//! | `app_exit` | — | `void`（不返回，直接退出进程） |
 
 use crate::config::{ConfigSection, ConfigSnapshot};
 use crate::error::{CmdResult, CommandError};
@@ -120,6 +124,45 @@ pub fn compile_cache_stats() -> civilcalc_core::engine::cache::CacheStats {
 pub fn compile_cache_clear() {
     civilcalc_core::engine::clear_compile_cache();
     civilcalc_core::log::i("Commands", "已清空表达式编译缓存");
+}
+
+// =============================================================================
+// 首次运行的「用户协议」
+// =============================================================================
+
+/// 用户是否已同意用户协议。
+///
+/// 前端在启动时问一次：`false` 就弹不可关闭的协议弹窗。
+#[tauri::command]
+pub fn eula_status(state: State<'_, AppState>) -> CmdResult<bool> {
+    let g = state.config.lock().map_err(|_| CommandError::Storage {
+        message: "偏好数据锁已中毒，请重启应用".to_string(),
+    })?;
+    Ok(g.eula_accepted())
+}
+
+/// 记下「用户已同意用户协议」。
+///
+/// ⚠️ 走 `state.update_config(...)` —— 它会在改完后 `save()`。
+/// 直接改 `state.config.lock()` 里的内存**不落盘**，
+/// 表现是「这次同意了，下次启动又被弹」。
+#[tauri::command]
+pub fn eula_accept(state: State<'_, AppState>) -> CmdResult<()> {
+    state.update_config(|c| c.set_eula_accepted(true))
+}
+
+/// 退出应用（用户在协议弹窗里点「不同意」时用）。
+///
+/// ⚠️ **不能在命令里直接 `app.exit()`**：那会在 IPC 响应发回去之前就把进程
+/// 干掉，前端那次 `await` 永远等不到结果。这里挪到另一个线程、延迟一小会儿
+/// 再退，让响应先落地（时序上干净，日志也能写完）。
+#[tauri::command]
+pub fn app_exit(app: tauri::AppHandle) {
+    civilcalc_core::log::i("Commands", "用户选择不同意用户协议，退出应用");
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(120));
+        app.exit(0);
+    });
 }
 
 #[cfg(test)]

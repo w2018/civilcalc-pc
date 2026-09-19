@@ -17,7 +17,7 @@
  * `toggleFavorite` 返回**切换后**的状态 —— 不要用 `!之前的值` 猜
  * （并发点击时会错）。
  */
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import SourceBadge from '@/components/common/SourceBadge.vue'
 import MathDisplay from '@/components/math/MathDisplay.vue'
 import type { FormulaSchema } from '@/types/domain'
@@ -31,7 +31,47 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'toggle-favorite'): void
   (e: 'open-versions'): void
+  /** 用户改了公式名（已 trim 过；父组件负责落库） */
+  (e: 'rename', name: string): void
 }>()
+
+// ---------------------------------------------------------------- 改公式名
+
+/** 是否处于内联编辑态 */
+const renaming = ref(false)
+/** 编辑中的名称草稿 */
+const nameDraft = ref('')
+/** 输入框实例（进入编辑态后聚焦） */
+const nameInputRef = ref<{ focus: () => void } | null>(null)
+
+function startRename(): void {
+  nameDraft.value = props.schema.resultName ?? ''
+  renaming.value = true
+  // 等输入框渲染出来再聚焦
+  void nextTick(() => nameInputRef.value?.focus())
+}
+
+/**
+ * 提交改名。
+ *
+ * 空名 / 与原名相同 → 当取消处理（不写库，也不提示）——
+ * 避免一次无意义的 upsert 连带重建检索索引。
+ *
+ * ⚠️ `renaming` 先置 false 再 emit：`el-input` 卸载时可能补一次 blur，
+ * 那次会再调到这里，靠这个早退挡住重复提交。
+ */
+function commitRename(): void {
+  if (!renaming.value) return
+  renaming.value = false
+  const next = nameDraft.value.trim()
+  if (!next || next === (props.schema.resultName ?? '').trim()) return
+  emit('rename', next)
+}
+
+/** `Esc` 放弃修改 */
+function cancelRename(): void {
+  renaming.value = false
+}
 
 /** 表达式是否展开（需求 5：默认展开） */
 const expanded = ref(true)
@@ -61,11 +101,35 @@ const hasExpression = computed(() => (props.schema.expression ?? '').trim().leng
 <template>
   <header class="head">
     <div class="head__top">
-      <h1 class="head__name">{{ schema.resultName || '未命名公式' }}</h1>
+      <!-- 改名：点 🖊 变输入框，Enter/失焦提交，Esc 放弃 -->
+      <el-input
+        v-if="renaming"
+        ref="nameInputRef"
+        v-model="nameDraft"
+        class="head__name-input"
+        size="small"
+        maxlength="60"
+        placeholder="公式名"
+        @keyup.enter="commitRename"
+        @keyup.esc="cancelRename"
+        @blur="commitRename"
+      />
+      <h1 v-else class="head__name">{{ schema.resultName || '未命名公式' }}</h1>
+
+      <el-tooltip v-if="!renaming" content="修改公式名" placement="bottom">
+        <button
+          class="head__icon-btn"
+          type="button"
+          aria-label="修改公式名"
+          @click="startRename"
+        >
+          🖊
+        </button>
+      </el-tooltip>
 
       <el-tooltip :content="favorite ? '取消收藏' : '收藏'" placement="bottom">
         <button
-          class="head__star"
+          class="head__icon-btn"
           type="button"
           :class="{ 'head__star--on': favorite }"
           :aria-label="favorite ? '取消收藏' : '收藏'"
@@ -145,7 +209,8 @@ const hasExpression = computed(() => (props.schema.expression ?? '').trim().leng
   white-space: nowrap;
 }
 
-.head__star {
+/* 名称右侧的一排图标按钮（改名 🖊 / 收藏 ★）共用同一套外观 */
+.head__icon-btn {
   flex-shrink: 0;
   width: 30px;
   height: 30px;
@@ -158,12 +223,20 @@ const hasExpression = computed(() => (props.schema.expression ?? '').trim().leng
   cursor: pointer;
 }
 
-.head__star:hover {
+.head__icon-btn:hover {
   background: var(--c-surface-hover);
 }
 
+/* 收藏选中态（只改颜色，外观仍走 .head__icon-btn） */
 .head__star--on {
   color: var(--c-warning);
+}
+
+/* 改名时的内联输入框：宽度跟着名称走，别把整行撑开 */
+.head__name-input {
+  flex: 0 1 auto;
+  width: 320px;
+  max-width: 60%;
 }
 
 .head__link {

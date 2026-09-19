@@ -174,6 +174,9 @@ pub fn run() {
             commands::system::config_reset_section,
             commands::system::compile_cache_stats,
             commands::system::compile_cache_clear,
+            commands::system::eula_status,
+            commands::system::eula_accept,
+            commands::system::app_exit,
             // ---- 组 2：内置公式库 ----
             commands::builtin::builtin_formulas,
             commands::builtin::builtin_formulas_json,

@@ -37,6 +37,8 @@
 *.scss  text eol=lf
 *.html  text eol=lf
 *.py    text eol=lf
+*.nsh   text eol=lf
+*.nsi   text eol=lf
 
 # ---- Windows 脚本保持 CRLF ----
 *.bat   text eol=crlf

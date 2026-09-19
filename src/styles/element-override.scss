@@ -88,30 +88,39 @@
  * 组件级修正
  * ========================================================================== */
 
-/* ---- 输入框：无四边框，仅底线（微信风表单特征）---- */
+/* ---- 输入框：完整四边框 ----
+ *
+ * 曾经是「无四边框、仅底线」（微信风表单特征）。改成方框的原因很实际：
+ * 底线输入框在**表单密集**的页面里，用户分不清哪里能点、哪里只是文字。
+ *
+ * 🔴 `box-shadow` 那两处**必须带 `!important`**：
+ * Element 自己用 `box-shadow` 画边框，这里改用真 `border`，
+ * 所以基础规则写了 `box-shadow: none !important`；
+ * 而 `!important` 优先于选择器权重，聚焦光圈那条不加 `!important` 压不住它。
+ */
 .el-input__wrapper {
   box-shadow: none !important;
-  border-radius: 0;
-  border-bottom: var(--hairline) solid var(--c-divider);
-  background: transparent;
-  padding-left: 0;
-  padding-right: 0;
+  border: var(--hairline) solid var(--c-divider);
+  border-radius: var(--r-btn);
+  background: var(--c-surface);
+  padding-left: var(--sp-3);
+  padding-right: var(--sp-3);
   transition: border-color 0.15s;
 }
 
 .el-input__wrapper:hover {
-  border-bottom-color: var(--c-text-3);
+  border-color: var(--c-text-3);
 }
 
 .el-input__wrapper.is-focus {
-  border-bottom-color: var(--c-primary);
-  border-bottom-width: 2px;
+  border-color: var(--c-primary);
+  /* 用一圈主色淡光代替加粗边框：加粗会让输入框在聚焦时跳一下 */
+  box-shadow: 0 0 0 3px var(--c-primary-light) !important;
 }
 
 .el-input.is-error .el-input__wrapper,
 .el-form-item.is-error .el-input__wrapper {
-  border-bottom-color: var(--c-danger);
-  border-bottom-width: 2px;
+  border-color: var(--c-danger);
 }
 
 /* 数字输入：去掉原生步进箭头（保持干净）*/
