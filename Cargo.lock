@@ -688,7 +688,7 @@ dependencies = [
 
 [[package]]
 name = "civilcalc-backup"
-version = "1.1.0"
+version = "1.3.0"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",
@@ -710,7 +710,7 @@ dependencies = [
 
 [[package]]
 name = "civilcalc-core"
-version = "1.1.0"
+version = "1.3.0"
 dependencies = [
  "log",
  "once_cell",
@@ -725,7 +725,7 @@ dependencies = [
 
 [[package]]
 name = "civilcalc-llm"
-version = "1.1.0"
+version = "1.3.0"
 dependencies = [
  "civilcalc-core",
  "futures-util",
@@ -740,7 +740,7 @@ dependencies = [
 
 [[package]]
 name = "civilcalc-pc"
-version = "1.1.0"
+version = "1.3.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -771,7 +771,7 @@ dependencies = [
 
 [[package]]
 name = "civilcalc-report"
-version = "1.1.0"
+version = "1.3.0"
 dependencies = [
  "chrono",
  "civilcalc-core",
@@ -785,7 +785,7 @@ dependencies = [
 
 [[package]]
 name = "civilcalc-store"
-version = "1.1.0"
+version = "1.3.0"
 dependencies = [
  "base64 0.22.1",
  "civilcalc-core",

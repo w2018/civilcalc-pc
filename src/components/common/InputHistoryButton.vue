@@ -17,6 +17,7 @@
  * 明确说「提交过一次之后才会出现在这里」。
  */
 import { computed, ref } from 'vue'
+import { formatDateTime } from '@/utils/format'
 import type { InputHistoryItem } from '@/composables/useInputHistory'
 
 const props = withDefaults(
@@ -48,19 +49,8 @@ function oneLine(t: string, max = 90): string {
   return s.length > max ? `${s.slice(0, max)}…` : s
 }
 
-/** 时间：今天只显示时分，其余显示月-日 时:分 */
-function when(ms: number): string {
-  if (!ms) return ''
-  const d = new Date(ms)
-  const p = (n: number) => String(n).padStart(2, '0')
-  const today = new Date()
-  const sameDay =
-    d.getFullYear() === today.getFullYear() &&
-    d.getMonth() === today.getMonth() &&
-    d.getDate() === today.getDate()
-  const hm = `${p(d.getHours())}:${p(d.getMinutes())}`
-  return sameDay ? hm : `${p(d.getMonth() + 1)}-${p(d.getDate())} ${hm}`
-}
+// 时间显示统一走 `utils/format` 的 `formatDateTime`（完整年月日时分秒）。
+// 这里原本自己写了一个「今天只给时分」的 `when()`，精度与其他页面不一致，已删。
 
 function pick(it: InputHistoryItem): void {
   emit('restore', it)
@@ -122,7 +112,7 @@ async function confirmClear(): Promise<void> {
       <li v-for="(it, i) in items" :key="`${it.at}-${i}`" class="row">
         <button class="item" type="button" @click="pick(it)">
           <span class="item__top">
-            <span class="item__time">{{ when(it.at) }}</span>
+            <span class="item__time">{{ formatDateTime(it.at) }}</span>
             <span v-if="it.imageIds.length > 0" class="item__imgs">
               🖼 {{ it.imageIds.length }} 张
             </span>

@@ -23,6 +23,7 @@
  * 那会让用户以为导入一个只含公式的包会连历史一起清掉。
  */
 import { computed, ref, watch } from 'vue'
+import { formatDateTime } from '@/utils/format'
 import {
   describeSummary,
   humanSize,
@@ -93,12 +94,11 @@ const summaryText = computed(() => {
 
 const emptyPackage = computed(() => (props.inspect ? isSummaryEmpty(props.inspect.summary) : false))
 
+// 时间显示统一走 `utils/format` 的 `formatDateTime`（完整年月日时分秒）
 const createdAtText = computed(() => {
   const ms = props.inspect?.createdAt ?? 0
   if (!ms) return '未知'
-  const d = new Date(ms)
-  const p = (x: number) => String(x).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+  return formatDateTime(ms)
 })
 
 function onRetry(): void {

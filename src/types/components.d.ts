@@ -28,6 +28,7 @@ declare module 'vue' {
     ElSkeleton: typeof import('element-plus/es')['ElSkeleton']
     ElSlider: typeof import('element-plus/es')['ElSlider']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
+    EulaDialog: typeof import('./../components/common/EulaDialog.vue')['default']
     ExcelPanel: typeof import('./../components/excel/ExcelPanel.vue')['default']
     ExplanationPanel: typeof import('./../components/llm/ExplanationPanel.vue')['default']
     ExportDialog: typeof import('./../components/report/ExportDialog.vue')['default']

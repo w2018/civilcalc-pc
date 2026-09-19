@@ -142,32 +142,30 @@ function pad2(n: number): string {
 }
 
 /**
- * 时间戳 → 列表用的相对友好文案。
+ * 时间戳（**Unix 毫秒**）→ 统一的 `YYYY-MM-DD HH:mm:ss`。
  *
- * | 距今 | 显示 |
- * |---|---|
- * | 今天 | `14:30` |
- * | 今年 | `09-17 14:30` |
- * | 更早 | `2025-09-17` |
+ * ## 🔴 一律完整到秒，不做「今天 / 今年」的省略
  *
- * 不显示秒 —— 历史列表里秒没有信息量，反而让每行更长。
+ * 曾经这里（以及好几个组件各自抄了一份的时间格式化）会按「距今多远」省略：
+ * 今天只给 `14:30`、更早只给日期。问题是**看不出具体时刻** ——
+ * 用户对不上「到底是哪一次操作」，而且同一份数据在不同页面显示的精度还不一样。
+ * 现在全应用统一成完整年月日时分秒。
+ *
+ * ## ⚠️ 入参是**毫秒**
+ *
+ * 后端时间戳来自 `civilcalc_core::now_ms()` —— `FormulaSchema.createdAt`、
+ * `FormulaVersion.createdAt`、`HistoryEntry.createdAt` 全是毫秒。
+ * 曾经 `VersionView` 按「秒」处理、多乘了一次 1000，界面上直接显示成
+ * `58684/11/23`。别再犯。
  */
-export function formatTime(ms: number): string {
-  if (!Number.isFinite(ms) || ms <= 0) return ''
+export function formatDateTime(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return '—'
 
   const d = new Date(ms)
-  const now = new Date()
+  if (Number.isNaN(d.getTime())) return '—'
 
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-
-  if (sameDay) return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-
-  if (d.getFullYear() === now.getFullYear()) {
-    return `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-  }
-
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+  return (
+    `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` +
+    ` ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`
+  )
 }

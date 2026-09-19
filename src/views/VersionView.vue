@@ -27,6 +27,7 @@ import {
 } from '@/api/version'
 import type { FormulaSchema, FormulaVersion, VersionDiff } from '@/types/domain'
 import VersionDiffView from '@/components/version/VersionDiff.vue'
+import { formatDateTime } from '@/utils/format'
 import { errorMessage } from '@/types/error'
 
 const route = useRoute()
@@ -258,11 +259,13 @@ function back() {
   router.push({ name: 'formula', params: { id: formulaId.value } })
 }
 
-function fmtTime(ts: number): string {
-  const d = new Date(ts * 1000)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleString()
-}
+/**
+ * 时间显示统一走 `utils/format`。
+ *
+ * ⚠️ 这里曾经自己写了一个 `fmtTime(ts)`，把入参当**秒**、`new Date(ts * 1000)` ——
+ * 而后端给的是**毫秒**，于是界面上显示成 `58684/11/23`。
+ * 不要再在这里自己格式化时间。
+ */
 
 /**
  * 已经加载过的公式 id。
@@ -327,7 +330,7 @@ onMounted(() => {
           >
             <span class="lin__name">{{ n.name }}</span>
             <span v-if="n.current" class="lin__badge">当前</span>
-            <span class="lin__time">{{ fmtTime(n.createdAt) }}</span>
+            <span class="lin__time">{{ formatDateTime(n.createdAt) }}</span>
           </button>
         </li>
       </ol>
@@ -355,7 +358,7 @@ onMounted(() => {
 
           <div class="vv__sub">
             <span>{{ v.editor || '—' }}</span>
-            <span>{{ fmtTime(v.createdAt) }}</span>
+            <span>{{ formatDateTime(v.createdAt) }}</span>
           </div>
           <div v-if="v.changeLog" class="vv__log">「{{ v.changeLog }}」</div>
 

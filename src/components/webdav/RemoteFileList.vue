@@ -21,6 +21,7 @@
  * 因为确认框还要展示「这条是什么时候的备份」，那是父组件更清楚的信息。
  */
 import { computed } from 'vue'
+import { formatDateTime } from '@/utils/format'
 import { humanSize, type RemoteBackup } from '@/types/backup'
 
 const props = withDefaults(
@@ -45,19 +46,14 @@ const emit = defineEmits<{
   (e: 'delete', backup: RemoteBackup): void
 }>()
 
-/** 文件名里的时间戳 → `YYYY-MM-DD HH:mm` */
-function timeText(ms: number): string {
-  if (!ms) return '时间未知'
-  const d = new Date(ms)
-  const p = (x: number) => String(x).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
+// 时间显示统一走 `utils/format` 的 `formatDateTime`（完整年月日时分秒）。
+// 这里原本自己抄了一份、只到分，与其他页面精度不一致，已删。
 
 const hiddenCount = computed(() => Math.max(0, props.total - props.backups.length))
 
 const statsText = computed(() => {
   const at = props.lastBackupAt
-  const last = at ? timeText(at) : '还没备份过'
+  const last = at ? formatDateTime(at) : '还没备份过'
   return `上次备份：${last} · 累计 ${props.backupCount} 次`
 })
 </script>
@@ -81,7 +77,7 @@ const statsText = computed(() => {
       <ul class="rfl__list">
         <li v-for="b in backups" :key="b.name" class="row">
           <div class="row__main">
-            <span class="row__time">{{ timeText(b.timestampMs) }}</span>
+            <span class="row__time">{{ formatDateTime(b.timestampMs) }}</span>
             <span class="row__meta">{{ humanSize(b.sizeBytes) }}</span>
             <span class="row__name">{{ b.name }}</span>
           </div>

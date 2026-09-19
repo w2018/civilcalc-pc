@@ -29,7 +29,7 @@ import { computed, onActivated, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { historyApi } from '@/api'
 import { errorMessage } from '@/types/error'
-import { formatTime } from '@/utils/format'
+import { formatDateTime } from '@/utils/format'
 import { formatNumber } from '@/utils/format'
 import {
   historyDisplayName,
@@ -195,7 +195,7 @@ const isEmpty = computed(() => !loading.value && entries.value.length === 0)
         <div class="item__main">
           <div class="item__title">{{ historyDisplayName(e) }}</div>
           <div class="item__sub">
-            <span class="item__time">{{ formatTime(e.createdAt) }}</span>
+            <span class="item__time">{{ formatDateTime(e.createdAt) }}</span>
             <span v-if="paramsSummary(e)" class="item__params">{{ paramsSummary(e) }}</span>
           </div>
         </div>

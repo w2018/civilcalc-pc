@@ -26,6 +26,7 @@ import { pickImageFiles, pickImageSavePath } from '@/api/dialog'
 import { saveDataUrlToFile } from '@/api/asset'
 import { useImageThumbs } from '@/composables/useImageThumbs'
 import ImageViewer from './ImageViewer.vue'
+import { formatDateTime } from '@/utils/format'
 import { errorMessage } from '@/types/error'
 import type { ImageCacheItem } from '@/types/image'
 
@@ -96,11 +97,8 @@ function humanSize(bytes: number): string {
   return `${bytes} B`
 }
 
-function formatTime(ms: number): string {
-  const d = new Date(ms)
-  const p = (x: number) => String(x).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
+// 时间显示统一走 `utils/format` 的 `formatDateTime`（完整年月日时分秒）。
+// 这里原本自己抄了一份、且只到分 —— 两处精度不一致，已经删掉。
 
 // ---------------------------------------------------------------- 选择
 
@@ -299,7 +297,7 @@ async function importFiles(): Promise<void> {
             引用 {{ it.refCount }}
           </span>
         </div>
-        <span class="cell__time">{{ formatTime(it.createdAt) }}</span>
+        <span class="cell__time">{{ formatDateTime(it.createdAt) }}</span>
       </div>
     </div>
 
