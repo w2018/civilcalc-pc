@@ -132,6 +132,10 @@ const paths = () =>
             版本 {{ info?.version || '—' }}
             <span v-if="info" class="head__schema">（数据库 schema v{{ info.dbSchemaVersion }}）</span>
           </p>
+          <!-- 作者紧跟在版本下面、与版本**左对齐** ——
+               以前它是卡片底部一个独立的「左标签 + 右值」行，
+               标签贴在最左边、与上面这组信息完全对不上，看起来不像一组。 -->
+          <p class="head__author">作者 曾先生</p>
         </div>
         <el-button :loading="checking" @click="checkUpdate()">检查更新</el-button>
       </div>
@@ -179,11 +183,6 @@ const paths = () =>
         </template>
       </div>
 
-      <!-- 作者信息 —— 放在「版本」卡片最底部（更新结果之后） -->
-      <div class="author">
-        <span class="kv__key">作者</span>
-        <span class="kv__val author__name">曾先生</span>
-      </div>
     </section>
 
     <!-- ② 运行信息 -->
@@ -290,15 +289,11 @@ const paths = () =>
 }
 
 /* 作者行：复用 `.kv__key` / `.kv__val` 的排版，只补一条与卡片内边距对齐的间距 */
-.author {
-  display: flex;
-  gap: var(--sp-2);
-  min-width: 0;
-  padding: 0 var(--sp-4) var(--sp-4);
-}
-
-.author__name {
-  font-weight: 600;
+/* 作者：与「版本」同一组、同字号同色 —— 它是元信息，不做强调 */
+.head__author {
+  margin: var(--sp-1) 0 0;
+  color: var(--c-text-3);
+  font-size: var(--f-size-sm);
 }
 
 .head__name {
