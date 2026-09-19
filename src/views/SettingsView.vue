@@ -628,9 +628,17 @@ async function onResetDone(): Promise<void> {
 .panel__head {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-4) 0;
+  /*
+   * ⚠️ 这里**不要**用 `justify-content: space-between`。
+   *
+   * 只有两个子项时它正好是「标题靠左、说明靠右」；但「AI 行为」那一栏是
+   * **三个**子项（caret / 标题 / 说明），space-between 会把**中间的标题推到正中** ——
+   * 看起来和别的折叠栏标题（都靠左）不对称。
+   *
+   * 靠右交给 `.panel__hint` 自己的 `margin-left: auto`，两种结构都对。
+   */
 }
 
 /* 可折叠的区块标题：整行可点，且要重置按钮的默认外观 */
@@ -654,8 +662,9 @@ async function onResetDone(): Promise<void> {
   color: var(--c-text-3);
 }
 
-/* 标题行右侧的补充说明 */
+/* 标题行右侧的补充说明：靠右由自己撑开（父级不用 space-between，见上） */
 .panel__hint {
+  margin-left: auto;
   color: var(--c-text-3);
   font-size: var(--f-size-xs);
 }

@@ -102,7 +102,9 @@ const sessionUsage = ref({ prompt: 0, completion: 0, total: 0, cached: 0, calls:
 /** 上下文配置（偏好） */
 const contextSize = ref(DEFAULT_TEST_CONTEXT_SIZE)
 const compressThreshold = ref(DEFAULT_TEST_COMPRESS_THRESHOLD)
-const compressNotice = ref(true)
+// 曾有一个 `compressNotice`（控制「超过阈值会自动压缩」那行提示是否显示）——
+// 那行提示已按用户要求删掉，这个开关也就没有消费方了，一并移除。
+// （偏好键 `model_test_compress_notice` 仍在 config.json 里，留着不影响。）
 
 /** 系统提示词（本页专属） */
 const systemPrompt = ref('')
@@ -182,7 +184,6 @@ async function loadPrefs(): Promise<void> {
     contextSize.value = snap.ints[PREF_KEYS.testContextSize] ?? DEFAULT_TEST_CONTEXT_SIZE
     compressThreshold.value =
       snap.ints[PREF_KEYS.testCompressThreshold] ?? DEFAULT_TEST_COMPRESS_THRESHOLD
-    compressNotice.value = (snap.ints[PREF_KEYS.testCompressNotice] ?? 1) !== 0
     // 上次没发出去的输入（崩溃后可恢复）
     draft.value = snap.strings[PREF_KEYS.modelTestInput] ?? ''
   } catch (e) {
@@ -214,14 +215,33 @@ const usedTokens = computed(
   () => conversationTokens(turns.value) + estimateTokens(draft.value) + estimateTokens(streamingText.value),
 )
 
+/**
+ * 触发自动压缩的 token 数（= 上下文大小 × 阈值%）。
+ *
+ * ⚠️ 它**只用来标注阈值**，不再当进度条的分母 —— 见 `usagePercent`。
+ */
 const limitTokens = computed(() => (contextSize.value * compressThreshold.value) / 100)
 
+/**
+ * 上下文占用百分比。
+ *
+ * 🔴 **分母必须是用户设置的上下文大小**（`contextSize`），不是 `limitTokens`。
+ * 之前用后者，界面上显示成 `755 / 160,000`（= 200,000 × 80%）——
+ * 用户设的是 200,000，看到 160,000 会以为设置没生效。
+ *
+ * 压缩阈值改为进度条上的**刻度线**（模板里的 `ctx__threshold`），
+ * 这样两个数各归各位、互不冒充。
+ *
+ * 保留一位小数：占用很小时（0.4%）取整成 0 会让人以为没在算。
+ */
 const usagePercent = computed(() => {
-  if (limitTokens.value <= 0) return 0
-  return Math.min(100, Math.round((usedTokens.value / limitTokens.value) * 100))
+  const total = contextSize.value
+  if (total <= 0) return 0
+  return Math.min(100, Math.round((usedTokens.value / total) * 1000) / 10)
 })
 
-const nearLimit = computed(() => usagePercent.value >= 80)
+/** 到达压缩阈值就变色 —— 阈值是**用户设的**，不要写死 80 */
+const nearLimit = computed(() => usagePercent.value >= compressThreshold.value)
 
 /** 轮数是否接近上限（后端最多留 200 轮） */
 const nearTurnLimit = computed(() => turns.value.length >= MAX_CONV_TURNS * 0.9)
@@ -554,20 +574,31 @@ const liveTokens = computed(() => {
         <div class="ctx__head">
           <span class="ctx__label">上下文占用（估算）</span>
           <span class="ctx__num" :class="{ 'ctx__num--warn': nearLimit }">
-            {{ n(usedTokens) }} / {{ n(limitTokens) }} tokens
+            {{ n(usedTokens) }} / {{ n(contextSize) }} tokens
           </span>
         </div>
-        <div class="ctx__bar" role="progressbar" :aria-valuenow="usagePercent" aria-valuemin="0" aria-valuemax="100">
-          <div class="ctx__fill" :class="{ 'ctx__fill--warn': nearLimit }" :style="{ width: `${usagePercent}%` }" />
+        <div
+          class="ctx__bar"
+          role="progressbar"
+          :aria-valuenow="usagePercent"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+          <div
+            class="ctx__fill"
+            :class="{ 'ctx__fill--warn': nearLimit }"
+            :style="{ width: `${usagePercent}%` }"
+          />
+          <!-- 压缩阈值刻度线：分母是「用户设的容量」，阈值单独标出来，两者不再互相冒充 -->
+          <span
+            class="ctx__threshold"
+            :style="{ left: `${compressThreshold}%` }"
+            :title="`达 ${compressThreshold}%（约 ${n(limitTokens)} tokens）时自动压缩`"
+          />
         </div>
-        <p class="ctx__hint">
-          <template v-if="compressNotice">
-            超过 {{ compressThreshold }}% 时**发送前会自动压缩**历史（用「字符数 / 2」估算，与后端同口径）。
-          </template>
-          <template v-else>
-            自动压缩提示已关闭（后端仍会按 {{ compressThreshold }}% 的阈值自动压缩）。
-          </template>
-          <template v-if="nearTurnLimit">⚠️ 消息数接近上限（{{ MAX_CONV_TURNS }}），最早的内容会被丢弃。</template>
+        <!-- 消息数上限是**真实告警**（会丢内容），保留；压缩说明那行已按要求删掉 -->
+        <p v-if="nearTurnLimit" class="ctx__hint">
+          ⚠️ 消息数接近上限（{{ MAX_CONV_TURNS }}），最早的内容会被丢弃。
         </p>
       </div>
 
@@ -608,7 +639,7 @@ const liveTokens = computed(() => {
           </button>
         </div>
         <p class="ctxcfg__hint">
-          占用超过「容量 × 阈值」时，**发送前会把历史压成一条摘要**。
+          占用超过「容量 × 阈值」时，发送前会把历史压成一条摘要。
           这里的进度条用「字符数 ÷ 2」估算，与后端同一口径 —— 不是厂商的精确 token 数。
         </p>
 
@@ -871,10 +902,23 @@ const liveTokens = computed(() => {
 }
 
 .ctx__bar {
+  /* 给阈值刻度线定位 */
+  position: relative;
   height: 6px;
   border-radius: var(--r-pill);
   background: var(--c-surface-2);
   overflow: hidden;
+}
+
+/* 压缩阈值刻度线 —— 分母改成「用户设的容量」之后，阈值靠它标出来 */
+.ctx__threshold {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-1px);
+  background: var(--c-text-3);
+  opacity: 0.7;
 }
 
 .ctx__fill {

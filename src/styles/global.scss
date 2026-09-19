@@ -45,7 +45,6 @@ html[data-bg-image='on'] {
   .panel,
   .head,
   .think,
-  .exp,
   .card,
   .branch,
   .nav,
@@ -55,6 +54,12 @@ html[data-bg-image='on'] {
     outline: var(--hairline) solid var(--c-frame);
     outline-offset: -1px;
   }
+
+  // ⚠️ 这里**刻意不含 `.exp`**（「计算书导出选项」表单的根元素）。
+  //
+  // 它整个就渲染在设置页的一个 `.panel` 里 —— 而 `.panel` 已经拿到半透明底
+  // 和框线了。再给 `.exp` 加一遍，面板内部就会**多出一圈没有意义的框**，
+  // 看起来像画错了。凡是「本来就住在 `.panel` 里」的容器都不该进这个名单。
 
   // 对话气泡用的是「次级面」（用户气泡的绿色由组件自己的规则管，
   // 那条选择器权重更高，不会被这里盖掉）
